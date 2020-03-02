@@ -7,7 +7,7 @@ While signing up to contribute to k8s, I found a broken link on the sign up proc
 I then wondered: How many other markdown links are broken in open source projects? As it turns out, a lot of them.  
 This tool will hopefully help me find and fix these links.
 
-Please not that, at least for now, the goal of this project is exploratory in nature -- My software skills have a long way to go, and this project will hopefully help me improve. I can make no guarantees that _anything_ in here works, or is a good idea to begin with.
+Please note that, at least for now, the goal of this project is exploratory in nature -- My software skills have a long way to go, and this project will hopefully help me improve. I can make no guarantees that _anything_ in here works, or is a good idea to begin with.
 
 ### Next actionable items
 - Organize this in packages. That big 400 line single file isn't nice to work with.

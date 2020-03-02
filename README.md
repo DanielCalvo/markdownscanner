@@ -9,7 +9,7 @@ This tool will hopefully help me find and fix these links.
 
 Please not that, at least for now, the goal of this project is exploratory in nature -- My software skills have a long way to go, and this project will hopefully help me improve. I can make no guarantees that _anything_ in here works, or is a good idea to begin with.
 
-###Next actionable items
+### Next actionable items
 - Organize this in packages. That big 400 line single file isn't nice to work with.
 - Go over all the comments in the code and take action on them. And clean the code up, too.
 - Save the results of your scan somewhere

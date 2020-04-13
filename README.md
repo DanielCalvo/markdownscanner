@@ -32,7 +32,7 @@ This tool will hopefully help me find and fix these links.
 - Prioritize repositories that have not been scanned yet. Then scan from oldest to newest!
 - Unit tests are missing
 - Delete repo once scan is completed. Make this an option later
-- Add the <h3>Scan results for PROJECT</h3> part on the project page.
+- Add the Scan results for PROJECT part on the project page.
 - Use some kind of Logger class/module (depending on language) that allows you to log at different levels (DEBUG, INFO, etc.)
 - Don't forge to handle timeouts appropriately (both on repositories and on http links)
 - It would be nice to have the metadata on the scan page as well (Put an indication of which repo the results page is for on the results page. You might need to send more data over)

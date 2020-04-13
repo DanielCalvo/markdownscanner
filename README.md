@@ -1,5 +1,5 @@
 ### Markdownscanner (TM)
-Are your links broken? Let's find out: https://mdscanner.dcalvo.dev/ 
+Are your links broken? Let's find out: https://mdscanner.dcalvo.dev/  
 Please note that this project is under development and I would not consider it ready for general use.  
 
 ### Okay but now for real

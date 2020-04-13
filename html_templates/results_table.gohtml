@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+        }
+
+    </style>
+</head>
+<body style="background-color:#AEB6BF;">
+
+<p><a href="/">Back to main page</a></p>
+
+<table style="width:100%">
+    <tr>
+        <th>Link Status</th>
+        <th>File On Github</th>
+        <th>Link Text & Destination</th>
+    </tr>
+    {{range .}}
+    <tr>
+        {{if (eq .Status "404")}}
+            <td><b>{{.Status}}</b></td>
+        {{else}}
+            <td>{{.Status}}</td>
+        {{end}}
+        <td><a href="{{.HTTPFilePath}}">{{.FileName}}</a></td>
+        {{if (eq .Type "HTTP")}}
+            <td><a href="{{.Destination}}">{{.Name}}</a></td>
+        {{else}}
+            <td>{{.Name}}</td>
+        {{end}}
+    </tr>
+    {{end}}
+</table>
+
+</body>
+</html>

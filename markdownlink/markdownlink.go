@@ -6,20 +6,23 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 type MarkdownLink struct {
-	File        string
-	Name        string
-	Destination string
-	Type        string
-	Status      string
+	FileName      string
+	LocalFilePath string
+	HTTPFilePath  string
+	Name          string
+	Destination   string
+	Type          string
+	Status        string
 }
 
 func (m *MarkdownLink) IsHTTP() bool {
 	_, err := url.ParseRequestURI(m.Destination)
-	if err == nil {
+	if err == nil && strings.HasPrefix(m.Destination, "http") {
 		return true
 	}
 	return false
@@ -36,70 +39,102 @@ func (m *MarkdownLink) IsFile() bool {
 	return false
 }
 
-func (m *MarkdownLink) IsEmail() bool {
+func (m *MarkdownLink) IsIgnored() bool {
+	//If Link to an email
 	if strings.HasPrefix(m.Destination, "mailto") {
+		return true
+	}
+	//if link to a Github pull request
+	if strings.Contains(m.Destination, "github.com") && strings.Contains(m.Destination, "/pull/") {
+		return true
+	}
+	//If changelog file
+	if strings.Contains(strings.ToLower(m.LocalFilePath), "changelog.md") {
+		return true
+	}
+	//If maintainers file
+	if strings.Contains(strings.ToLower(m.LocalFilePath), "maintainers.md") {
+		return true
+	}
+	//If minutes file
+	if strings.Contains(strings.ToLower(m.LocalFilePath), "minutes") {
+		return true
+	}
+	//If inside a vendors folter
+	if strings.Contains(strings.ToLower(m.LocalFilePath), "/vendor/") {
 		return true
 	}
 	return false
 }
 
-//Don't forge to handle links in the docs that you may have to login into first (see if you can handle a forbidden or something)
-//Double check all HTTP codes one by one to make sure you're handling them correctly
-//Perhaps you need to handle timeouts!
 func (m *MarkdownLink) CheckHTTP() {
 	m.Type = "HTTP"
 	resp, err := http.Head(m.Destination)
 	if err != nil {
-		m.Status = "BROKEN"
+		m.Status = "ERR"
 		return
 	}
-	if resp.StatusCode >= 200 && resp.StatusCode <= 208 || resp.StatusCode >= 300 && resp.StatusCode <= 308 || resp.StatusCode == 405 {
-		m.Status = "OK"
-	} else {
-		m.Status = "BROKEN"
-	}
+	m.Status = strconv.Itoa(resp.StatusCode)
 }
 
 func (m *MarkdownLink) CheckFile() {
 	m.Type = "FILE"
 
-	mDestination := filepath.Dir(m.File) + string(os.PathSeparator) + m.Destination
+	mDestination := filepath.Dir(m.LocalFilePath) + string(os.PathSeparator) + m.Destination
 
 	//Still can't check things like: /app_management/secrets_and_configmaps.md#secrets-from-files (yet!)
 	if strings.HasPrefix(m.Destination, "#") || strings.Contains(m.Destination, "#") {
-		m.Status = "NOT IMPLEMENTED"
+		m.Status = "N/A"
 		return
 	}
 
 	_, err := os.Stat(mDestination)
 	if os.IsNotExist(err) {
-		m.Status = "BROKEN"
+		m.Status = "404"
 	} else {
-		m.Status = "OK"
+		m.Status = "200"
 	}
 
 	if _, err := os.Stat(mDestination); os.IsNotExist(err) {
-		m.Status = "BROKEN"
+		m.Status = "404"
 	} else {
-		m.Status = "OK"
+		m.Status = "200"
 	}
 }
 
-func (m *MarkdownLink) CheckEmail() {
-	m.Type = "EMAIL"
-	m.Status = "NOT IMPLEMENTED"
+func (m *MarkdownLink) SetIgnored() {
+	m.Type = "IGNORED"
+	m.Status = "IGNORED"
 }
 
 func (m *MarkdownLink) CheckLink() {
 	switch {
+	case m.IsIgnored():
+		m.SetIgnored()
 	case m.IsHTTP():
 		m.CheckHTTP()
 	case m.IsFile():
 		m.CheckFile()
-	case m.IsEmail():
-		m.CheckEmail()
 	default:
 		m.Type = "UNKNOWN"
-		m.Status = "NOT IMPLEMENTED"
+		m.Status = "N/A"
 	}
 }
+
+//func (m *MarkdownLink) CheckLink() {
+//	if m.IsIgnored() {
+//		m.SetIgnored()
+//		return
+//	}
+//	if m.IsHTTP() {
+//		m.CheckHTTP()
+//		return
+//	}
+//	if m.IsFile() {
+//		m.CheckFile()
+//		return
+//	}
+//	m.Type = "UNKNOWN"
+//	m.Status = "N/A"
+//	return
+//}

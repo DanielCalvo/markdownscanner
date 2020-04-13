@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body style="background-color:#AEB6BF;">
+
+<h2>Markdown scanner</h2>
+<p>For a given project on Github, Markdown scanner checks all the <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet#links" target="_blank">links</a> in <a href="https://guides.github.com/features/mastering-markdown/" target="_blank">markdown</a> files for that project and generates a report. Click on a HTML report below to get started, and maybe fix a broken link on an open source project!</p>
+
+<table style="width:100%">
+    <tr>
+        <th>Project</th>
+        <th>Link Report</th>
+        <th>LinksScanned</th>
+        <th>Links404</th>
+        <th>Last Scan time</th>
+        <th>GitHub</th>
+    </tr>
+    {{range .}}
+    <tr>
+        <td>{{.ProjectName}}</td>
+        <td><a href="{{.HTMLReportFilename}}">HTML</a> / <a href="{{.JSONReportFilename}}">JSON</a></td>
+        <td>{{.LinksScanned}}</td>
+        <td>{{.Links404}}</td>
+        <td>{{.LastScanned}}</td>
+        <td><a href="{{.RepoURL}}">{{.RepoURL}}</a> </td>
+        </tr>
+    {{end}}
+</table>
+<br>dcalvo, 2020. Source on <a href="https://github.com/DanielCalvo/markdownscanner" target="_blank">Github</a>. Don't let your memes be dreams.
+</body>
+</html>

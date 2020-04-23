@@ -1,4 +1,4 @@
-package markdownlink
+package markdownscanner
 
 import (
 	"net/http"
@@ -39,15 +39,9 @@ func (m *MarkdownLink) IsFile() bool {
 	return false
 }
 
+//It's starting to look like you'll need a map here
 func (m *MarkdownLink) IsIgnored() bool {
-	//If Link to an email
-	if strings.HasPrefix(m.Destination, "mailto") {
-		return true
-	}
-	//if link to a Github pull request
-	if strings.Contains(m.Destination, "github.com") && strings.Contains(m.Destination, "/pull/") {
-		return true
-	}
+
 	//If changelog file
 	if strings.Contains(strings.ToLower(m.LocalFilePath), "changelog.md") {
 		return true
@@ -60,13 +54,32 @@ func (m *MarkdownLink) IsIgnored() bool {
 	if strings.Contains(strings.ToLower(m.LocalFilePath), "minutes") {
 		return true
 	}
-	//If inside a vendors folter
+	//If Link to an email
+	if strings.HasPrefix(m.Destination, "mailto") {
+		return true
+	}
+	//If inside a vendors folder
 	if strings.Contains(strings.ToLower(m.LocalFilePath), "/vendor/") {
 		return true
 	}
+
+	if strings.Contains(strings.ToLower(m.LocalFilePath), "/releases/") {
+		return true
+	}
+
+	//if link to a Github pull request
+	if strings.Contains(m.Destination, "github.com") && strings.Contains(m.Destination, "/pull/") {
+		return true
+	}
+	//if link to a Github pull issue
+	if strings.Contains(m.Destination, "github.com") && strings.Contains(m.Destination, "/issues/") {
+		return true
+	}
+
 	return false
 }
 
+//Set status to 404 if link not found?
 func (m *MarkdownLink) CheckHTTP() {
 	m.Type = "HTTP"
 	resp, err := http.Head(m.Destination)

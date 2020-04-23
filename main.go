@@ -3,9 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	. "github.com/DanielCalvo/markdownscanner/markdownlink"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/yaml.v2"
+	. "github.com/DanielCalvo/markdownscanner/markdownscanner"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -15,7 +13,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -56,69 +53,24 @@ func CheckAndAddPathSeparatorSuffix(fsPath string) string {
 	}
 }
 
-//Possibly split into: CloneGitRepository, UpdateGitRepository
-//Only works with http(s). Will there be SSH support?
-//There is indeed something wrong with this function as oftentimes the program crashes when trying to clone a repository for the first time
-func GetGitRepository(repositoryUrl, tmpDir string) (string, error) {
-	//tmpDir = CheckAndAddPathSeparatorSuffix(tmpDir)
-
-	url, err := url.ParseRequestURI(repositoryUrl)
-	if err != nil {
-		return "", err
-	}
-
-	gitRepoFolder := tmpDir + url.Path
-
-	_, fsErr := os.Stat(gitRepoFolder)
-
-	//There's a bug in here? Are you pulling if the repo already exists?
-	if os.IsNotExist(fsErr) {
-		_, err := git.PlainClone(gitRepoFolder, false, &git.CloneOptions{
-			URL:      repositoryUrl,
-			Progress: os.Stdout,
-		})
-		if err != nil {
-			return "", err
-		}
-	} else if fsErr != nil {
-		return gitRepoFolder, fsErr
-	}
-
-	repository, err := git.PlainOpen(gitRepoFolder)
-	if err != nil {
-		return "", err
-	}
-
-	workTree, err := repository.Worktree()
-	if err != nil {
-		return "", err
-	}
-
-	err = workTree.Pull(&git.PullOptions{RemoteName: "origin"})
-	if err == git.NoErrAlreadyUpToDate {
-		return gitRepoFolder, nil
-	} else {
-		return "", err
-	}
-}
-
 //You need to handle the errors here
 //"info" is a poor variable name
 func GetMarkdownFiles(repositoryFilesystemPath, gitRepositoryUrl string) []MarkdownFile {
 	var markdownFiles []MarkdownFile
 
+	//Returning nil but no err? Is this ok?
 	url, err := url.ParseRequestURI(gitRepositoryUrl)
 	if err != nil {
 		return nil
 	}
 
 	//rename this "info" in here maybe, that's not a very descriptive variable name
-	err = filepath.Walk(repositoryFilesystemPath, func(path string, info os.FileInfo, err error) error {
-		if strings.HasSuffix(info.Name(), ".md") {
+	err = filepath.Walk(repositoryFilesystemPath, func(path string, file os.FileInfo, err error) error {
+		if strings.HasSuffix(file.Name(), ".md") && DoesExist(file.Name()) {
 			s := strings.Split(path, url.Path)
 			mdFile := MarkdownFile{
 				FilePath: path,
-				FileName: info.Name(),
+				FileName: file.Name(),
 				HTTPAddr: gitRepositoryUrl + "/tree/master" + s[1],
 			}
 			markdownFiles = append(markdownFiles, mdFile)
@@ -175,27 +127,6 @@ func GetMarkdownLinksFromFiles(mdFiles []MarkdownFile) ([]MarkdownLink, error) {
 	return markdownLinks, nil
 }
 
-func CheckMarkdownLinksWorker(mdLinkIn <-chan MarkdownLink, workerNum int) <-chan MarkdownLink {
-	mdLinkOut := make(chan MarkdownLink)
-	var wg sync.WaitGroup
-
-	wg.Add(workerNum)
-	go func() {
-		for i := 0; i < workerNum; i++ {
-			go func() {
-				defer wg.Done()
-				for mdLink := range mdLinkIn {
-					mdLink.CheckLink()
-					mdLinkOut <- mdLink
-				}
-			}()
-		}
-		wg.Wait()
-		close(mdLinkOut)
-	}()
-	return mdLinkOut
-}
-
 func CheckMarkdownLinksWithSleep(mdLinks []MarkdownLink, sleepTime time.Duration) []MarkdownLink {
 	var scannedLinks []MarkdownLink
 	for _, mdLink := range mdLinks {
@@ -212,26 +143,6 @@ func CheckMarkdownLinksWithSleep(mdLinks []MarkdownLink, sleepTime time.Duration
 //Name things properly in this function
 //Leave a comment or two in here
 
-func CheckMarkdownLinks(mdLinks []MarkdownLink, workerNum int) []MarkdownLink {
-	linkChan := make(chan MarkdownLink)
-	go func() {
-		for _, link := range mdLinks {
-			linkChan <- link
-		}
-		close(linkChan)
-	}()
-
-	checkedLinks := CheckMarkdownLinksWorker(linkChan, workerNum)
-
-	var mdLinksProcessed []MarkdownLink
-
-	for checkedLink := range checkedLinks {
-		mdLinksProcessed = append(mdLinksProcessed, checkedLink)
-		log.Println("Checked:", checkedLink)
-	}
-	return mdLinksProcessed
-}
-
 func Count404MarkdownLinks(mdLinks []MarkdownLink) int {
 	var c int
 	for _, link := range mdLinks {
@@ -242,13 +153,19 @@ func Count404MarkdownLinks(mdLinks []MarkdownLink) int {
 	return c
 }
 
-func GetRepoFilenameWithExtension(repoUrl, extension string) (string, error) {
-	url, err := url.ParseRequestURI(repoUrl)
-	if err != nil {
-		return "", err
+func SortLinksByStatus(mdLinks []MarkdownLink, status string) []MarkdownLink {
+	var tmpLinks []MarkdownLink
+
+	//returns a slice bounds out of error if 404 link is on the last element
+	//Redo do this!
+	for i, v := range mdLinks {
+		if strings.HasPrefix(v.Status, "4") {
+			tmpLinks = append(tmpLinks, v)
+			mdLinks = append(mdLinks[:i], mdLinks[i+1:]...)
+		}
 	}
-	urlPathUnderscores := strings.ReplaceAll(url.Path, "/", "_")
-	return url.Host + urlPathUnderscores + "." + extension, nil
+	mdLinks = append(tmpLinks, mdLinks...)
+	return mdLinks
 }
 
 func SaveStructToJson(s interface{}, jsonFilesystemPath string) error {
@@ -296,21 +213,6 @@ func SaveCheckedLinksToJsonAndHtml(mdLinks []MarkdownLink, gitRepositoryUrl stri
 	return nil
 }
 
-func GetRepositoriesFromYaml(yamlPath string) ([]string, error) {
-	var gitRepositories []string
-
-	repositoriesYamlFile, err := ioutil.ReadFile(yamlPath)
-	if err != nil {
-		return nil, err
-	}
-	err = yaml.Unmarshal(repositoriesYamlFile, &gitRepositories)
-	if err != nil {
-		log.Println("Cannot unmarshall repositories.yaml:", err)
-		panic(err)
-	}
-	return gitRepositories, nil
-}
-
 func GenerateIndexHtml(gc GlobalConfig) error {
 	var scans []ScanMetadata
 
@@ -329,6 +231,7 @@ func GenerateIndexHtml(gc GlobalConfig) error {
 			scanMetadataJson, _ := ioutil.ReadAll(jsonFile)
 			err = json.Unmarshal(scanMetadataJson, &scan)
 			if err != nil {
+				//panicking doesn't seem very productive
 				panic(err)
 			}
 			scans = append(scans, scan)
@@ -358,7 +261,10 @@ func main() {
 	log.SetOutput(os.Stdout)
 
 	webMode := flag.Bool("webmode", false, "Does this application start in webserver mode?")
-	slowScan := flag.Bool("slowscan", false, "Flag to scan things slowly to avoid generating too many requests")
+
+	//create a flag for just scanning
+	//can't scan and have it as webmode at the same time!
+	//slowScan := flag.Bool("slowscan", true, "Flag to scan things slowly to avoid generating too many requests")
 	flag.Parse()
 
 	pwd, err := os.Getwd()
@@ -392,39 +298,42 @@ func main() {
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}
 
-	gitRepositoryUrls, err := GetRepositoriesFromYaml(globalConfig.RepositoriesYamlFile)
+	gitRepositoryUrls, err := GetRepositoryUrlsFromYaml(globalConfig.RepositoriesYamlFile)
 	if err != nil {
 		log.Println("Error getting repositories from yaml", err)
 		panic(err)
 	}
 
+	gitRepositoryUrls = SortRepositoriesByUnscannedFirst(gitRepositoryUrls, globalConfig.StaticFolder)
+
 	log.Println("Beginning main loop: Iterating over Git Repositories from repositories.yaml")
 	for _, gitRepositoryUrl := range gitRepositoryUrls {
 
-		gitRepoFilesystemPath, err := GetGitRepository(gitRepositoryUrl, globalConfig.RepositoriesFolder)
+		log.Println("Clonning", gitRepositoryUrl)
+		gitRepoFilesystemPath, err := CloneGitRepository(gitRepositoryUrl, globalConfig.RepositoriesFolder)
 		if err != nil {
 			log.Println("Error cloning or updating: "+gitRepositoryUrl, err)
 			continue
 		}
+		log.Println("Cloning complete for:", gitRepositoryUrl)
 
+		log.Println("Getting markdownfiles for", gitRepositoryUrl)
 		markdownFiles := GetMarkdownFiles(gitRepoFilesystemPath, gitRepositoryUrl)
-		log.Println("Found", len(markdownFiles), "markdown files on", gitRepositoryUrl)
+		log.Println("Found", len(markdownFiles), "markdown FILES on", gitRepositoryUrl)
 
 		markdownLinks, err := GetMarkdownLinksFromFiles(markdownFiles)
 		if err != nil {
 			log.Println("Unable to GetMarkdownLinksFromFiles:", err)
 			continue
 		}
-		log.Println("Found", len(markdownLinks), "markdown links on", gitRepositoryUrl)
+		log.Println("Found", len(markdownLinks), "markdown LINKS on", gitRepositoryUrl)
 
 		var checkedLinks []MarkdownLink
+		checkedLinks = CheckMarkdownLinksWithSleep(markdownLinks, time.Second)
 
-		if *slowScan {
-			checkedLinks = CheckMarkdownLinksWithSleep(markdownLinks, time.Second)
-		} else {
-			checkedLinks = CheckMarkdownLinks(markdownLinks, globalConfig.WorkerNum)
-		}
 		log.Println("Markdown link check complete")
+
+		checkedLinks = SortLinksByStatus(checkedLinks, "404")
 
 		err = SaveCheckedLinksToJsonAndHtml(checkedLinks, gitRepositoryUrl, globalConfig)
 		if err != nil {

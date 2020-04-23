@@ -172,7 +172,6 @@ func GetRepositoryUrlsFromYaml(yamlPath string) ([]string, error) {
 	return repositoryUrls, nil
 }
 
-//validate for invalid project somewhere in here
 func GetReposFromProject(project string) ([]string, error) {
 	var repositoryUrls []string
 
@@ -208,10 +207,8 @@ func GetReposFromProject(project string) ([]string, error) {
 	return repositoryUrls, nil
 }
 
-//Possibly split into: CloneGitRepository, UpdateGitRepository
-//Only works with http(s). Will there be SSH support?
+//go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
 func CloneGitRepository(repositoryUrl, repositoriesFolder string) (string, error) {
-
 	url, err := url.ParseRequestURI(repositoryUrl)
 	if err != nil {
 		return "", err
@@ -220,7 +217,6 @@ func CloneGitRepository(repositoryUrl, repositoriesFolder string) (string, error
 	repositoryFolder := repositoriesFolder + url.Path
 
 	if !DoesExist(repositoryFolder) {
-		//go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
 		cmd := exec.Command("git", "clone", repositoryUrl, repositoryFolder)
 		err = cmd.Run()
 		if err != nil {
@@ -231,7 +227,7 @@ func CloneGitRepository(repositoryUrl, repositoriesFolder string) (string, error
 	return repositoryFolder, nil
 }
 
-//This function is used to check if something is a broken symlink.
+//This function is used to check if a file is a broken symlink.
 func DoesExist(path string) bool {
 	if _, err := os.Stat(path); err == nil {
 		return true

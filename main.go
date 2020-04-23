@@ -54,7 +54,6 @@ func CheckAndAddPathSeparatorSuffix(fsPath string) string {
 }
 
 //You need to handle the errors here
-//"info" is a poor variable name
 func GetMarkdownFiles(repositoryFilesystemPath, gitRepositoryUrl string) []MarkdownFile {
 	var markdownFiles []MarkdownFile
 
@@ -64,7 +63,6 @@ func GetMarkdownFiles(repositoryFilesystemPath, gitRepositoryUrl string) []Markd
 		return nil
 	}
 
-	//rename this "info" in here maybe, that's not a very descriptive variable name
 	err = filepath.Walk(repositoryFilesystemPath, func(path string, file os.FileInfo, err error) error {
 		if strings.HasSuffix(file.Name(), ".md") && DoesExist(file.Name()) {
 			s := strings.Split(path, url.Path)
@@ -84,8 +82,6 @@ func GetMarkdownFiles(repositoryFilesystemPath, gitRepositoryUrl string) []Markd
 	return markdownFiles
 }
 
-//leave some big comments explaining the regexes in this function
-//this can still be improved, the regex could go on their own functions and run in parallel
 func GetMarkdownLinksFromFiles(mdFiles []MarkdownFile) ([]MarkdownLink, error) {
 
 	var markdownLinks []MarkdownLink
@@ -96,7 +92,6 @@ func GetMarkdownLinksFromFiles(mdFiles []MarkdownFile) ([]MarkdownLink, error) {
 			return nil, err
 		}
 
-		//GetInlineLinks
 		//regex for footnote style MarkdownLinks
 		re := regexp.MustCompile(`(\[.+\])\s*:\s*(.+)`)
 		for _, matchedMarkdownLink := range re.FindAllStringSubmatch(string(fileContents), -1) {
@@ -110,7 +105,6 @@ func GetMarkdownLinksFromFiles(mdFiles []MarkdownFile) ([]MarkdownLink, error) {
 			markdownLinks = append(markdownLinks, mdLink)
 		}
 
-		//GetFootnoteLinks
 		//regex for inline style links
 		re = regexp.MustCompile(`(\[.+?\])((\()(.+?)(\)))`)
 		for _, matchedMarkdownLink := range re.FindAllStringSubmatch(string(fileContents), -1) {
@@ -140,9 +134,6 @@ func CheckMarkdownLinksWithSleep(mdLinks []MarkdownLink, sleepTime time.Duration
 	return scannedLinks
 }
 
-//Name things properly in this function
-//Leave a comment or two in here
-
 func Count404MarkdownLinks(mdLinks []MarkdownLink) int {
 	var c int
 	for _, link := range mdLinks {
@@ -156,8 +147,7 @@ func Count404MarkdownLinks(mdLinks []MarkdownLink) int {
 func SortLinksByStatus(mdLinks []MarkdownLink, status string) []MarkdownLink {
 	var tmpLinks []MarkdownLink
 
-	//returns a slice bounds out of error if 404 link is on the last element
-	//Redo do this!
+	//returns a slice bounds out of error if 404 link is on the last element. Redo do this!
 	for i, v := range mdLinks {
 		if strings.HasPrefix(v.Status, "4") {
 			tmpLinks = append(tmpLinks, v)
@@ -196,8 +186,6 @@ func SaveCheckedLinksToJsonAndHtml(mdLinks []MarkdownLink, gitRepositoryUrl stri
 		return err
 	}
 
-	//Uh, a hardcoded path. This should be changed...
-	//SaveStructToHtml in here perhaps?
 	tpl := template.Must(template.ParseFiles(gc.TemplateFolder + string(os.PathSeparator) + "results_table.gohtml"))
 
 	htmlFile, err := os.Create(gc.StaticFolder + string(os.PathSeparator) + HtmlFileName)
@@ -216,12 +204,11 @@ func SaveCheckedLinksToJsonAndHtml(mdLinks []MarkdownLink, gitRepositoryUrl stri
 func GenerateIndexHtml(gc GlobalConfig) error {
 	var scans []ScanMetadata
 
-	err := filepath.Walk(gc.StaticFolder, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(gc.StaticFolder, func(path string, file os.FileInfo, err error) error {
 		var scan ScanMetadata
 
-		//This can be improved, what you want is "starts with"
-		//"Info" is not a good variable name
-		if strings.Contains(info.Name(), "metadata_") {
+		//What you actually want is "starts with". Improve this!
+		if strings.Contains(file.Name(), "metadata_") {
 			jsonFile, err := os.Open(path)
 			if err != nil {
 				log.Println(err)
@@ -261,10 +248,6 @@ func main() {
 	log.SetOutput(os.Stdout)
 
 	webMode := flag.Bool("webmode", false, "Does this application start in webserver mode?")
-
-	//create a flag for just scanning
-	//can't scan and have it as webmode at the same time!
-	//slowScan := flag.Bool("slowscan", true, "Flag to scan things slowly to avoid generating too many requests")
 	flag.Parse()
 
 	pwd, err := os.Getwd()
@@ -307,8 +290,8 @@ func main() {
 	gitRepositoryUrls = SortRepositoriesByUnscannedFirst(gitRepositoryUrls, globalConfig.StaticFolder)
 
 	log.Println("Beginning main loop: Iterating over Git Repositories from repositories.yaml")
-	for _, gitRepositoryUrl := range gitRepositoryUrls {
 
+	for _, gitRepositoryUrl := range gitRepositoryUrls {
 		log.Println("Clonning", gitRepositoryUrl)
 		gitRepoFilesystemPath, err := CloneGitRepository(gitRepositoryUrl, globalConfig.RepositoriesFolder)
 		if err != nil {

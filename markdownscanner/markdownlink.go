@@ -39,7 +39,7 @@ func (m *MarkdownLink) IsFile() bool {
 	return false
 }
 
-//It's starting to look like you'll need a map here
+//It's starting to look like could use a map here
 func (m *MarkdownLink) IsIgnored() bool {
 
 	//If changelog file
@@ -79,7 +79,6 @@ func (m *MarkdownLink) IsIgnored() bool {
 	return false
 }
 
-//Set status to 404 if link not found?
 func (m *MarkdownLink) CheckHTTP() {
 	m.Type = "HTTP"
 	resp, err := http.Head(m.Destination)
@@ -133,21 +132,3 @@ func (m *MarkdownLink) CheckLink() {
 		m.Status = "N/A"
 	}
 }
-
-//func (m *MarkdownLink) CheckLink() {
-//	if m.IsIgnored() {
-//		m.SetIgnored()
-//		return
-//	}
-//	if m.IsHTTP() {
-//		m.CheckHTTP()
-//		return
-//	}
-//	if m.IsFile() {
-//		m.CheckFile()
-//		return
-//	}
-//	m.Type = "UNKNOWN"
-//	m.Status = "N/A"
-//	return
-//}

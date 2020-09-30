@@ -1,3 +1,5 @@
+#Redo, there is no webserver any longer
+
 FROM golang:1.13
 
 ENV GO111MODULE=on

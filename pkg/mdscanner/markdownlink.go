@@ -1,4 +1,4 @@
-package markdownscanner
+package mdscanner
 
 import (
 	"net/http"
@@ -39,7 +39,7 @@ func (m *MarkdownLink) IsFile() bool {
 	return false
 }
 
-//It's starting to look like could use a map here
+//It's starting to look like you could use a map here
 func (m *MarkdownLink) IsIgnored() bool {
 
 	//If changelog file
@@ -71,7 +71,7 @@ func (m *MarkdownLink) IsIgnored() bool {
 	if strings.Contains(m.Destination, "github.com") && strings.Contains(m.Destination, "/pull/") {
 		return true
 	}
-	//if link to a Github pull issue
+	//if link to a Github issue
 	if strings.Contains(m.Destination, "github.com") && strings.Contains(m.Destination, "/issues/") {
 		return true
 	}
@@ -107,6 +107,7 @@ func (m *MarkdownLink) CheckFile() {
 		m.Status = "200"
 	}
 
+	//Is this happening twice for no reason?
 	if _, err := os.Stat(mDestination); os.IsNotExist(err) {
 		m.Status = "404"
 	} else {

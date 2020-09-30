@@ -1,0 +1,15 @@
+#Rename this to Folders, followed  by "tmp" and "project"
+filesystem:
+  projectFolder: /home/daniel/tmp/markdownscanner
+  scanMetadataFolder: /home/daniel/tmp/markdownscanner/metadata
+  tmpFolder: /tmp/mdscanner
+s3:
+  region: eu-west-1
+  bucketName: mdscanner-bucket
+GithubProjects:
+  - etcd-io
+#  - trivago
+  - kubernetes
+Repositories:
+#  - https://github.com/kubernetes/kubectl
+#  - https://github.com/trivago/samsa

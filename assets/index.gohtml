@@ -15,7 +15,7 @@
 <table style="width:100%">
     <tr>
         <th>Project</th>
-        <th>Link Report</th>
+        <th>Report Link</th>
         <th>LinksScanned</th>
         <th>Links404</th>
         <th>Last Scan time</th>
@@ -23,15 +23,15 @@
     </tr>
     {{range .}}
     <tr>
-        <td>{{.ProjectName}}</td>
-        <td><a href="{{.HTMLReportFilename}}">HTML</a> / <a href="{{.JSONReportFilename}}">JSON</a></td>
+        <td><a href="{{.HTMLReportPath}}">{{.Name}}</a></td>
+        <td><a href="{{.HTMLReportPath}}">HTML</a> / <a href="{{.JSONReportPath}}">JSON</a></td>
         <td>{{.LinksScanned}}</td>
         <td>{{.Links404}}</td>
         <td>{{.LastScanned}}</td>
-        <td><a href="{{.RepoURL}}">{{.RepoURL}}</a> </td>
+        <td><a href="{{.URL}}">{{.URL}}</a> </td>
         </tr>
     {{end}}
 </table>
-<br>dcalvo, 2020. Source on <a href="https://github.com/DanielCalvo/markdownscanner" target="_blank">Github</a>. Don't let your memes be dreams.
+<br>Don't let your memes be dreams. Source on <a href="https://github.com/DanielCalvo/markdownscanner" target="_blank">Github</a>. Powered by Mr. Bezos's free tier. Thanks Jeff!
 </body>
 </html>

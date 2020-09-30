@@ -43,11 +43,11 @@ func (m *MarkdownLink) IsFile() bool {
 func (m *MarkdownLink) IsIgnored() bool {
 
 	//If changelog file
-	if strings.Contains(strings.ToLower(m.LocalFilePath), "changelog.md") {
+	if strings.Contains(strings.ToLower(m.LocalFilePath), "changelog") {
 		return true
 	}
 	//If maintainers file
-	if strings.Contains(strings.ToLower(m.LocalFilePath), "maintainers.md") {
+	if strings.Contains(strings.ToLower(m.LocalFilePath), "maintainers") {
 		return true
 	}
 	//If minutes file

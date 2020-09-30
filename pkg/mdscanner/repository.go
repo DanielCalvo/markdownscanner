@@ -267,9 +267,8 @@ func CheckMarkdownLinksWithSleep(r *Repository, sleepTime time.Duration) []Markd
 		if mdLink.Type == "HTTP" {
 			time.Sleep(sleepTime)
 		}
-		fmt.Println("Checked:", mdLink)
 		scannedLinks = append(scannedLinks, mdLink)
-		log.Println("Checked:", mdLink)
+		log.Printf("%+v ", mdLink)
 	}
 	return scannedLinks
 }

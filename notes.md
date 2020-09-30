@@ -1,9 +1,44 @@
 ### Actionable items
+- Replace all the fmt messages with log messages
+- Add more log messages!
+    - Add shorter log messages for the checks too!
 - Missing production setup on orange pi
-    - User with promer permissions
+    - Set up AWS user with proper permissions
     - Cron set up
 - Set up a working
 - Is it possible to write a Prometheus Exporter?
+```
+Checked: {CHANGELOG-3.0.md /tmp/mdscanner/etcd-io/etcd/CHANGELOG-3.0.md https://github.com/etcd-io/etcd/tree/master/CHANGELOG-3.0.md [code changes] https://github.com/etcd-io/etcd/compare/v3.0.7...v3.0.8 HTTP 200}
+```
+
+### Code TODOs
+- Redo the Dockerfile for the executable thing
+- Careful with what you export (https://blog.golang.org/organizing-go-code)
+- https://peter.bourgon.org/go-best-practices-2016/#repository-structure
+- https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
+
+- About Cobra: https://github.com/spf13/cobra
+    - I think you don't need cobra for now as you'll only run with one parameter, but maybe investigate more functionality later
+    - Like running the program with a parameter (--project) or to save results locally and don't upload them to S3 (--dont-upload)
+    - Viper remains to be explored later as well: https://github.com/spf13/viper
+
+### Things to do
+- Scan projects that have not been scanned the longest first
+- Make sure repository folder is clean at program start up
+- Review error handling (handle errors better than just printing stuff (maybe see where it may be appropriate to panic, and handle timeoouts too!))
+- Check how having using a more sophisticated logging method could improve the program
+- Set a timeout / handle timeouts on HTTP checks properly. Further info here: http://networkbit.ch/golang-http-client/#minimal
+- Create usage instructions
+- Is there a way to ignore checks on github users?
+- Don't forget to document which links get ignored somewhere
+- Find a way to implement header checks for markdown files. That might be tough...
+- Recheck go.mod and general install (create instructions)
+- There are no unit tests. You should create some!
+- Add the `Scan results for PROJECT` part on the project page.
+- Do some research on "how to organize your go project" and apply it here.
+- Remove the excessive newlines on the html if you can, more info here: https://github.com/golang/go/issues/9969
+
+
 #### Terraform
 - Create the following:
     - S3 bucket (not public)

@@ -7,9 +7,9 @@ s3:
   region: eu-west-1
   bucketName: mdscanner-bucket
 GithubProjects:
-  - etcd-io
-#  - trivago
-  - kubernetes
+#  - etcd-io
+##  - trivago
+#  - kubernetes
 Repositories:
 #  - https://github.com/kubernetes/kubectl
-#  - https://github.com/trivago/samsa
+  - https://github.com/etcd-io/etcd

@@ -1,4 +1,4 @@
-#Redo, there is no webserver any longer
+#This dockerfile is outdated and needs redoing, there is no webserver anymore
 
 FROM golang:1.13
 

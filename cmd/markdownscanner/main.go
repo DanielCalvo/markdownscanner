@@ -16,12 +16,14 @@ func main() {
 	configFile := flag.String("config.file", "", "Filesystem path for markdown scanner configuration file")
 	flag.Parse()
 
+	log.Println("Loading config file")
 	conf, err := config.LoadFile(*configFile)
 	if err != nil {
 		fmt.Println("Could not load config file:", err)
 		os.Exit(1)
 	}
 
+	log.Println("Initializing config file")
 	err = config.Initialize(conf)
 	if err != nil {
 		fmt.Println("Error initiating config:", err)
@@ -38,26 +40,30 @@ func main() {
 		}
 		projectRepos = append(projectRepos, prepos...)
 	}
+
+	//conf.Repositories is a poor name. conf.RepoUrls would be better I think
 	conf.Repositories = append(conf.Repositories, projectRepos...)
 
-	//Sort repos by Unscanned first
+	//Later at some point you can read from disk when repos were last scanned too and sort by oldest scan first
+	repositories := mdscanner.NewRepositories(conf, conf.Repositories)
+	repositories = mdscanner.SortRepositoriesByUnscannedFirst(repositories)
 
-	for _, repoURL := range conf.Repositories {
-		repo, err := mdscanner.NewRepository(conf, repoURL)
-		if err != nil {
-			fmt.Println("Error encountered initializing repository:", err)
-			continue
-		}
+	for _, repo := range repositories {
+		fmt.Println(repo.Name)
 
+		log.Println("Cloning repostory:", repo.Name)
 		err = mdscanner.CloneRepository(repo)
 		if err != nil {
 			fmt.Println("Error clonning repository:", err)
 			continue
 		}
 
+		log.Println("Getting Markdown files")
 		mdscanner.GetMarkdownFiles(&repo)
+		log.Println("Getting Markdown links from files")
 		mdscanner.GetMarkdownLinksFromFiles(&repo)
 
+		log.Println("Deleting repository", repo.Name)
 		err = mdscanner.DeleteRepository(repo)
 		if err != nil {
 			fmt.Println("Unable to delete repository")
@@ -65,9 +71,11 @@ func main() {
 		}
 
 		//Figure out later why this doesn't work in place
+		log.Println("Checking Markdown links")
 		repo.MarkdownLinks = mdscanner.CheckMarkdownLinksWithSleep(&repo, time.Second)
-		//checkedLinks = SortLinksByStatus(checkedLinks, "404")
+		repo.MarkdownLinks = mdscanner.SortLinksBy404(repo.MarkdownLinks)
 
+		log.Println("Uploading scan result to S3")
 		err = mdscanner.UploadResultsToS3(*conf, repo)
 
 		if err != nil {
@@ -80,12 +88,13 @@ func main() {
 		repo.LinksScanned = len(repo.MarkdownLinks)
 		repo.Links404 = mdscanner.Count404MarkdownLinks(repo.MarkdownLinks)
 
+		log.Println("Saving scan metadata")
 		err = mdscanner.SaveScanMetadata(repo)
 		if err != nil {
 			log.Println("Could not SaveScanMetadata:", err)
 		}
-		log.Println("Scan metadata saved to json")
 
+		log.Println("Generating and uploading index html")
 		err = mdscanner.GenerateAndUploadIndexHtml(*conf)
 		if err != nil {
 			log.Println("Could not GenerateIndexHtml:", err)

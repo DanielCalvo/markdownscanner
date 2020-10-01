@@ -179,6 +179,22 @@ func NewRepository(c *config.Config, repoURL string) (Repository, error) {
 	return r, nil
 }
 
+func NewRepositories(c *config.Config, repoUrls []string) []Repository {
+	var repositories []Repository
+
+	for _, repoUrl := range repoUrls {
+		repository, err := NewRepository(c, repoUrl)
+		if err != nil {
+			log.Println("ERROR initializing repository:", repoUrl)
+			log.Println(err)
+		} else {
+			repositories = append(repositories, repository)
+		}
+	}
+	return repositories
+}
+
+//Hmmm maybe this can be useful at some point
 func ValidateGitRepository(repository string) error {
 	_, err := url.ParseRequestURI(repository)
 	if err != nil {
@@ -358,7 +374,6 @@ func GetRepositoriesScanMetadata(c config.Config) ([]Repository, error) {
 	err := filepath.Walk(c.Filesystem.ScanMetadataFolder, func(path string, file os.FileInfo, err error) error {
 		var repository Repository
 
-		fmt.Println("Path:", path)
 		//What you actually want is "starts with". Improve this!
 		if strings.HasSuffix(file.Name(), ".json") {
 			jsonFile, err := os.Open(path)
@@ -412,7 +427,6 @@ func GenerateAndUploadIndexHtml(c config.Config) error {
 	return nil
 }
 
-//Divide smaller parts of this into subfunctions
 func UploadResultsToS3(c config.Config, r Repository) error {
 	err := UploadJSONToS3(c, r)
 	if err != nil {
@@ -525,25 +539,22 @@ func GetRepoUrlsFromProject(project string) ([]string, error) {
 	return repositoryUrls, nil
 }
 
-//func SortRepositoriesByUnscannedFirst(repoUrls []string, staticFolder string) []string {
-//	var notScanned []string
-//	var alreadyScanned []string
-//
-//	for _, repo := range repoUrls {
-//
-//		HtmlFileName, _ := GetRepoFilenameWithExtension(repo, "html")
-//		_, err := os.Stat(staticFolder + HtmlFileName)
-//
-//		if os.IsNotExist(err) {
-//			notScanned = append(notScanned, repo)
-//		} else {
-//			alreadyScanned = append(alreadyScanned, repo)
-//		}
-//
-//	}
-//	return append(notScanned, alreadyScanned...)
-//}
-//
+func SortRepositoriesByUnscannedFirst(repos []Repository) []Repository {
+	var notScannedRepos []Repository
+	var alreadyScannedRepos []Repository
+
+	for _, repo := range repos {
+		//If the metadata file does not exist, this repository has never been scanned
+		_, err := os.Stat(repo.MetadataReportPath)
+		if os.IsNotExist(err) {
+			notScannedRepos = append(notScannedRepos, repo)
+		} else {
+			alreadyScannedRepos = append(alreadyScannedRepos, repo)
+		}
+	}
+	sortedRepos := append(notScannedRepos, alreadyScannedRepos...)
+	return sortedRepos
+}
 
 //If ran on a Unix system:
 //If this function receives /tmp it will return /tmp/
@@ -558,18 +569,19 @@ func GetRepoUrlsFromProject(project string) ([]string, error) {
 //}
 //
 
-//
-//func SortLinksByStatus(mdLinks []MarkdownLink, status string) []MarkdownLink {
-//	var tmpLinks []MarkdownLink
-//
-//	//returns a slice bounds out of error if 404 link is on the last element. Redo do this!
-//	for i, v := range mdLinks {
-//		if strings.HasPrefix(v.Status, "4") {
-//			tmpLinks = append(tmpLinks, v)
-//			mdLinks = append(mdLinks[:i], mdLinks[i+1:]...)
-//		}
-//	}
-//	mdLinks = append(tmpLinks, mdLinks...)
-//	return mdLinks
-//}
-//
+//Make this more modular later, 404 isn't very... parametrized
+func SortLinksBy404(mdLinks []MarkdownLink) []MarkdownLink {
+	var links404 []MarkdownLink
+	var otherLinks []MarkdownLink
+
+	//returns a slice bounds out of error if 404 link is on the last element. Redo do this!
+	for _, link := range mdLinks {
+		if strings.Contains(link.Status, "4") {
+			links404 = append(links404, link)
+		} else {
+			otherLinks = append(otherLinks, link)
+		}
+	}
+	mdLinks = append(links404, otherLinks...)
+	return mdLinks
+}

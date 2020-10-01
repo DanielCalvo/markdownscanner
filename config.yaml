@@ -2,14 +2,14 @@
 filesystem:
   projectFolder: /home/daniel/tmp/markdownscanner
   scanMetadataFolder: /home/daniel/tmp/markdownscanner/metadata
-  tmpFolder: /tmp/mdscanner
+  tmpFolder: /home/daniel/tmp/markdownscanner/tmp
 s3:
   region: eu-west-1
   bucketName: mdscanner-bucket
 GithubProjects:
-#  - etcd-io
-##  - trivago
-#  - kubernetes
+  - kubernetes
+  - trivago
+  - etcd-io
+  - hashicorp
 Repositories:
 #  - https://github.com/kubernetes/kubectl
-  - https://github.com/etcd-io/etcd

@@ -3,10 +3,15 @@
 - Add more log messages!
     - Add shorter log messages for the checks too!
 - Missing production setup on orange pi
-    - Set up AWS user with proper permissions
+    - Set up AWS user with proper permissions (terraform this part too)
     - Cron set up
 - Set up a working
 - Is it possible to write a Prometheus Exporter?
+- Stick to a coding standard pls (is it c or config? r or repo?)
+- Order the functions in the packages (put close together what happens close together)
+- Refine HTTP ERR (check the error and take it from there, it's more valuable to know that something is a timeout rather than a 404)
+- Can you have a status page? You can have an independent routine running that updates a status page
+- You are still missing tests!
 ```
 Checked: {CHANGELOG-3.0.md /tmp/mdscanner/etcd-io/etcd/CHANGELOG-3.0.md https://github.com/etcd-io/etcd/tree/master/CHANGELOG-3.0.md [code changes] https://github.com/etcd-io/etcd/compare/v3.0.7...v3.0.8 HTTP 200}
 ```

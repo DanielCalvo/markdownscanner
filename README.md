@@ -7,11 +7,5 @@ While signing up to contribute to k8s, I found a broken link on the sign up proc
 I then wondered: How many other markdown links are broken in open source projects? As it turns out, a lot of them.  
 This tool will hopefully help me find and fix these links.
 
-
 #### Docker shenanigans
-- All commands were ran from the project root:
-```
-docker build . -t danitest
-docker run danitest -it /bin/bash
-docker run -d -v $(pwd)/html_static:/app/server/html_static -p 8080:8080 danitest
-```
+- Pending

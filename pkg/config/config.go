@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 //Should I put the file config inside another struct as it was done in Prometheus?
@@ -77,6 +78,13 @@ func ValidateS3Bucket(c *Config) error {
 
 //somehow check that you can write to the tmp folder?
 func ValidateDir(s string) error {
+
+	//Remove the contents of the temporary directory on startup (but not the directory itself)
+	dir, err := ioutil.ReadDir(s)
+	for _, d := range dir {
+		_ = os.RemoveAll(path.Join([]string{"tmp", d.Name()}...))
+	}
+
 	f, err := os.Stat(s)
 
 	if err != nil {
@@ -111,8 +119,6 @@ func Initialize(c *Config) error {
 	if err != nil {
 		return err
 	}
-
-	//GetProject repositories from the GitHub API here
 
 	//err = ValidateS3Bucket(c)
 	//if err != nil {

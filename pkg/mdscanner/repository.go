@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/DanielCalvo/markdownscanner/pkg/config"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -206,7 +205,29 @@ func ValidateGitRepository(repository string) error {
 	return nil
 }
 
-//leave comment about how scan metadata is just a subset of the Repository struct, except files and links
+//go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
+//github.com/kubernetes/kubernetes takes about 1gb of ram to clone
+//This runs on an orangepi with 512mb of ram, so we're gonna have to stick with the command line git
+func CloneRepository(r Repository) error {
+	if !DoesExist(r.FilesystemPath) {
+		cmd := exec.Command("git", "clone", r.URL, r.FilesystemPath)
+		err := cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DeleteRepository(r Repository) error {
+	err := os.RemoveAll(r.FilesystemPath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//Scan metadata is just a subset of the Repository struct, but without the files and links slices
 func SaveScanMetadata(r Repository) error {
 	r.MarkdownFiles = nil
 	r.MarkdownLinks = nil
@@ -289,62 +310,6 @@ func CheckMarkdownLinksWithSleep(r *Repository, sleepTime time.Duration) []Markd
 	return scannedLinks
 }
 
-//func GetRepositoryUrlsFromYaml(yamlPath string) ([]string, error) {
-//	var repositoriesYaml RepositoriesYaml
-//	var repositoryUrls []string
-//
-//	repositoriesYamlFile, err := ioutil.ReadFile(yamlPath)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	err = yaml.Unmarshal(repositoriesYamlFile, &repositoriesYaml)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	fmt.Println(repositoriesYaml.Projects)
-//	for _, githubProject := range repositoriesYaml.Projects {
-//		repos, err := GetReposFromProject(githubProject)
-//		if err == nil {
-//			repositoryUrls = append(repositoryUrls, repos...)
-//		} else {
-//			log.Println("Error getting repositories for:"+githubProject+":", err)
-//		}
-//	}
-//
-//	for _, githubRepo := range repositoriesYaml.Repositories {
-//		err = ValidateGitRepository(githubRepo)
-//		if err == nil {
-//			repositoryUrls = append(repositoryUrls, githubRepo)
-//		} else {
-//			log.Println("Error validating repository URL:"+githubRepo+":", err)
-//		}
-//	}
-//	return repositoryUrls, nil
-//}
-//
-
-//go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
-func CloneRepository(r Repository) error {
-	if !DoesExist(r.FilesystemPath) {
-		cmd := exec.Command("git", "clone", r.URL, r.FilesystemPath)
-		err := cmd.Run()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func DeleteRepository(r Repository) error {
-	err := os.RemoveAll(r.FilesystemPath)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func DoesExist(path string) bool {
 	if _, err := os.Stat(path); err == nil {
 		return true
@@ -399,7 +364,6 @@ func GetRepositoriesScanMetadata(c config.Config) ([]Repository, error) {
 }
 
 func GenerateAndUploadIndexHtml(c config.Config) error {
-
 	repositories, err := GetRepositoriesScanMetadata(c)
 	if err != nil {
 		return err
@@ -478,7 +442,6 @@ func UploadHTMLToS3(c config.Config, r Repository) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -494,14 +457,17 @@ func TemplateHTMLReportToBuffer(s string, r Repository) (bytes.Buffer, error) {
 	return buf, err
 }
 
-func Count404MarkdownLinks(mdLinks []MarkdownLink) int {
-	var c int
-	for _, link := range mdLinks {
-		if link.Status == "404" {
-			c++
+func GetRepoUrlsFromProjects(projects []string) []string {
+	var allProjectRepos []string
+
+	for _, project := range projects {
+		projectRepos, err := GetRepoUrlsFromProject(project)
+		if err != nil {
+			continue
 		}
+		allProjectRepos = append(allProjectRepos, projectRepos...)
 	}
-	return c
+	return allProjectRepos
 }
 
 func GetRepoUrlsFromProject(project string) ([]string, error) {
@@ -523,7 +489,7 @@ func GetRepoUrlsFromProject(project string) ([]string, error) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading body. ", err)
+		log.Println("Error reading body. ", err)
 	}
 
 	ghResponse := GithubProjectApiResponse{}
@@ -537,6 +503,16 @@ func GetRepoUrlsFromProject(project string) ([]string, error) {
 		repositoryUrls = append(repositoryUrls, repo.HTMLURL)
 	}
 	return repositoryUrls, nil
+}
+
+func Count404MarkdownLinks(mdLinks []MarkdownLink) int {
+	var c int
+	for _, link := range mdLinks {
+		if link.Status == "404" {
+			c++
+		}
+	}
+	return c
 }
 
 func SortRepositoriesByUnscannedFirst(repos []Repository) []Repository {
@@ -555,19 +531,6 @@ func SortRepositoriesByUnscannedFirst(repos []Repository) []Repository {
 	sortedRepos := append(notScannedRepos, alreadyScannedRepos...)
 	return sortedRepos
 }
-
-//If ran on a Unix system:
-//If this function receives /tmp it will return /tmp/
-//If it receives /tmp/ it will return /tmp/
-//func CheckAndAddPathSeparatorSuffix(fsPath string) string {
-//	if !strings.HasSuffix(fsPath, string(os.PathSeparator)) {
-//		fsPath = fsPath + string(os.PathSeparator)
-//		return fsPath
-//	} else {
-//		return fsPath
-//	}
-//}
-//
 
 //Make this more modular later, 404 isn't very... parametrized
 func SortLinksBy404(mdLinks []MarkdownLink) []MarkdownLink {

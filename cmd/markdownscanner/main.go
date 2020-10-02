@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/DanielCalvo/markdownscanner/pkg/config"
 	"github.com/DanielCalvo/markdownscanner/pkg/mdscanner"
 	"log"
@@ -19,42 +18,30 @@ func main() {
 	log.Println("Loading config file")
 	conf, err := config.LoadFile(*configFile)
 	if err != nil {
-		fmt.Println("Could not load config file:", err)
+		log.Println("Could not load config file:", err)
 		os.Exit(1)
 	}
 
 	log.Println("Initializing config file")
 	err = config.Initialize(conf)
 	if err != nil {
-		fmt.Println("Error initiating config:", err)
+		log.Println("Error initiating config:", err)
 		os.Exit(1)
 	}
 
-	//Please improve this and put it in a function, it's awful here
-	//Also merge conf.Repositories and the repositories from conf.GithubProjects properly into another slice
-	var projectRepos []string
-	for _, p := range conf.GithubProjects {
-		prepos, err := mdscanner.GetRepoUrlsFromProject(p)
-		if err != nil {
-			continue
-		}
-		projectRepos = append(projectRepos, prepos...)
-	}
+	repoUrlsFromProjects := mdscanner.GetRepoUrlsFromProjects(conf.GithubProjects)
 
-	//conf.Repositories is a poor name. conf.RepoUrls would be better I think
-	conf.Repositories = append(conf.Repositories, projectRepos...)
-
-	//Later at some point you can read from disk when repos were last scanned too and sort by oldest scan first
-	repositories := mdscanner.NewRepositories(conf, conf.Repositories)
+	//conf.Repositories is a poor name. conf.RepoUrls would be better (as a Repository is a different type)
+	repoUrlsToScan := append(conf.Repositories, repoUrlsFromProjects...)
+	repositories := mdscanner.NewRepositories(conf, repoUrlsToScan)
 	repositories = mdscanner.SortRepositoriesByUnscannedFirst(repositories)
 
 	for _, repo := range repositories {
-		fmt.Println(repo.Name)
 
 		log.Println("Cloning repostory:", repo.Name)
 		err = mdscanner.CloneRepository(repo)
 		if err != nil {
-			fmt.Println("Error clonning repository:", err)
+			log.Println("Error clonning repository:", err)
 			continue
 		}
 
@@ -66,7 +53,7 @@ func main() {
 		log.Println("Deleting repository", repo.Name)
 		err = mdscanner.DeleteRepository(repo)
 		if err != nil {
-			fmt.Println("Unable to delete repository")
+			log.Println("Unable to delete repository:", err)
 			continue
 		}
 
@@ -79,7 +66,7 @@ func main() {
 		err = mdscanner.UploadResultsToS3(*conf, repo)
 
 		if err != nil {
-			fmt.Println("Could not upload to S3:", err)
+			log.Println("Could not upload to S3:", err)
 			continue
 		}
 

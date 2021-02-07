@@ -15,7 +15,7 @@ import (
 //Don't forget the rename TODO as described on config.yaml
 type Config struct {
 	Filesystem struct {
-		ProjectFolder      string `yaml:"projectFolder"`
+		ProjectFolder      string `yaml:"projectFolder"` //I don't like this -- get it from the $CURRENT_DIR if you can
 		TmpFolder          string `yaml:"tmpFolder"`
 		ScanMetadataFolder string `yaml:"scanMetadataFolder"`
 	} `yaml:"filesystem"`
@@ -104,6 +104,7 @@ func ValidateDir(s string) error {
 	return nil
 }
 
+//This function may be doing to many things -- maybe do the S3 check elsewhere
 func Initialize(c *Config) error {
 	err := ValidateDir(c.Filesystem.TmpFolder)
 	if err != nil {
@@ -126,5 +127,4 @@ func Initialize(c *Config) error {
 	//}
 
 	return nil
-
 }

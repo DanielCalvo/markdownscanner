@@ -240,7 +240,6 @@ func SaveScanMetadata(r Repository) error {
 }
 
 func GetMarkdownFiles(r *Repository) {
-
 	//validate if file is a broken symlink somehow (&& mdscanner.DoesExist(file.Name())
 	err := filepath.Walk(r.FilesystemPath, func(path string, file os.FileInfo, err error) error {
 		if strings.HasSuffix(file.Name(), ".md") {
@@ -260,46 +259,58 @@ func GetMarkdownFiles(r *Repository) {
 }
 
 func GetMarkdownLinksFromFiles(r *Repository) {
-
 	for _, mdFile := range r.MarkdownFiles {
-		fileContents, err := ioutil.ReadFile(mdFile.FilePath)
+		mdLink, err := GetMarkdownLinksFromFile(mdFile)
 		if err != nil {
 			continue
 		}
-
-		//regex for footnote style MarkdownLinks
-		re := regexp.MustCompile(`(\[.+\])\s*:\s*(.+)`)
-		for _, matchedMarkdownLink := range re.FindAllStringSubmatch(string(fileContents), -1) {
-			mdLink := MarkdownLink{
-				FileName:      mdFile.FileName,
-				LocalFilePath: mdFile.FilePath,
-				HTTPFilePath:  mdFile.HTTPAddr,
-				Name:          matchedMarkdownLink[1],
-				Destination:   matchedMarkdownLink[2],
-			}
-			r.MarkdownLinks = append(r.MarkdownLinks, mdLink)
-		}
-
-		//regex for inline style links
-		re = regexp.MustCompile(`(\[.+?\])((\()(.+?)(\)))`)
-		for _, matchedMarkdownLink := range re.FindAllStringSubmatch(string(fileContents), -1) {
-			mdLink := MarkdownLink{
-				FileName:      mdFile.FileName,
-				LocalFilePath: mdFile.FilePath,
-				HTTPFilePath:  mdFile.HTTPAddr,
-				Name:          matchedMarkdownLink[1],
-				Destination:   matchedMarkdownLink[4],
-			}
-			r.MarkdownLinks = append(r.MarkdownLinks, mdLink)
-		}
+		r.MarkdownLinks = append(r.MarkdownLinks, mdLink...)
 	}
 }
 
+//takes a markdown file
+//returns a slice of markdownlink
+func GetMarkdownLinksFromFile(mdFile MarkdownFile) ([]MarkdownLink, error) {
+	var mdLinks []MarkdownLink
+
+	fileContents, err := ioutil.ReadFile(mdFile.FilePath)
+	if err != nil {
+		return mdLinks, err
+	}
+
+	//regex for footnote style MarkdownLinks
+	re := regexp.MustCompile(`(\[.+\])\s*:\s*(.+)`)
+	for _, matchedMarkdownLink := range re.FindAllStringSubmatch(string(fileContents), -1) {
+		mdLink := MarkdownLink{
+			FileName:      mdFile.FileName,
+			LocalFilePath: mdFile.FilePath,
+			HTTPFilePath:  mdFile.HTTPAddr,
+			Name:          matchedMarkdownLink[1],
+			Destination:   matchedMarkdownLink[2],
+		}
+		mdLinks = append(mdLinks, mdLink)
+	}
+
+	//regex for inline style links
+	re = regexp.MustCompile(`(\[.+?\])((\()(.+?)(\)))`)
+	for _, matchedMarkdownLink := range re.FindAllStringSubmatch(string(fileContents), -1) {
+		mdLink := MarkdownLink{
+			FileName:      mdFile.FileName,
+			LocalFilePath: mdFile.FilePath,
+			HTTPFilePath:  mdFile.HTTPAddr,
+			Name:          matchedMarkdownLink[1],
+			Destination:   matchedMarkdownLink[4],
+		}
+		mdLinks = append(mdLinks, mdLink)
+	}
+	return mdLinks, nil
+}
+
 //You couldn't figure out why an in-place operation in mdLink.CheckLink did not get the value out of this function
-func CheckMarkdownLinksWithSleep(r *Repository, sleepTime time.Duration) []MarkdownLink {
+func CheckMarkdownLinksWithSleep(mdLinks []MarkdownLink, sleepTime time.Duration) []MarkdownLink {
 	var scannedLinks []MarkdownLink
 
-	for _, mdLink := range r.MarkdownLinks {
+	for _, mdLink := range mdLinks {
 		mdLink.CheckLink()
 		if mdLink.Type == "HTTP" {
 			time.Sleep(sleepTime)

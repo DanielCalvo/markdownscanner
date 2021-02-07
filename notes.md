@@ -1,4 +1,5 @@
 ### Actionable items
+- Set sane values for config if you find no file? (aka running from container in cmdline mode?)
 - Explicitly rename things like "projectRepos" for "projectRepoUrls" when they're different types
 - Set up AWS user with proper permissions (terraform this part too)
     - Cron set up

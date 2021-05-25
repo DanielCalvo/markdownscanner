@@ -40,7 +40,7 @@ func GetGithubRawUrlFromGithubUrl(s string) (string, error) {
 	return ghUrl.String(), nil
 }
 
-//You copied and pasted that from here: https://golangbyexample.com/download-image-file-url-golang/
+//You copied and pasted that from here: https://golangbyexample.com/download-image-fileurl-golang/
 func DownloadFile(URL string) error {
 	response, err := http.Get(URL)
 	if err != nil {
@@ -69,15 +69,15 @@ func DownloadFile(URL string) error {
 func main() {
 	fmt.Println("hey")
 
-	if os.Getenv("file-url") == "" {
-		log.Fatal("HTTP file target not passed as \"file-url\" environment variable")
+	if os.Getenv("fileurl") == "" {
+		log.Fatal("HTTP file target not passed as \"fileurl\" environment variable")
 	}
 
 	//Download file to the current dir (no tmpdir shenanigans!)
 
 	fmt.Println(os.Getwd())
 
-	raw, _ := GetGithubRawUrlFromGithubUrl(os.Getenv("file-url"))
+	raw, _ := GetGithubRawUrlFromGithubUrl(os.Getenv("fileurl"))
 	fmt.Println(raw)
 
 	err := DownloadFile(raw)

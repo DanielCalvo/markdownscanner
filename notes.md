@@ -1,4 +1,26 @@
+### IT'S ME FROM THE FUTURE
+- WHAT THE HELL IS THAT YAML FILE THAT'S AWFUL
+- Do command line flags! I think cobra command could help you here
+    - And then you can do one to upload to s3 if you want to
+    - And then you can choose repos or organizations and all etc
+    - And then you can get rid of the multiple folders under cmd 
+---
+How we're gonna do this
+- mdscanner scan <repo>
+- mdscanner scan --config-file <config-file> 
+Hmm so you scan and output things to stdout, but what about the reports?
+
+- Hmm, how's the cobra project structure? I'm browsing around and there does not seem to be a hard standard, but here's what I'm getting
+- cmd
+- pkg
+- main.go? Or does this go on cmd?
+
+Interesting! Read this: https://github.com/golang-standards/project-layout
+- Don't forget to create a new branch before getting your hands dirty with this again!
+
+---
 ### Actionable items
+- How do you add/integrate tests into all of this?. It's important. You need to figure it out!
 - Set sane values for config if you find no file? (aka running from container in cmdline mode?)
 - Explicitly rename things like "projectRepos" for "projectRepoUrls" when they're different types
 - Set up AWS user with proper permissions (terraform this part too)

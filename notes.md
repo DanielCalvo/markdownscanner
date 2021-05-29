@@ -1,88 +1,24 @@
-### IT'S ME FROM THE FUTURE
-- WHAT THE HELL IS THAT YAML FILE THAT'S AWFUL
-- Do command line flags! I think cobra command could help you here
-    - And then you can do one to upload to s3 if you want to
-    - And then you can choose repos or organizations and all etc
-    - And then you can get rid of the multiple folders under cmd 
----
-How we're gonna do this
-- mdscanner scan <repo>
-- mdscanner scan --config-file <config-file> 
-Hmm so you scan and output things to stdout, but what about the reports?
 
-- Hmm, how's the cobra project structure? I'm browsing around and there does not seem to be a hard standard, but here's what I'm getting
-- cmd
-- pkg
-- main.go? Or does this go on cmd?
+- Layouts seem to be an issue: https://github.com/golang-standards/project-layout/issues/117
+- uuuh
 
-Interesting! Read this: https://github.com/golang-standards/project-layout
-- Don't forget to create a new branch before getting your hands dirty with this again!
+lets just use
+- cmd (for cobra commands)
+- internal (for your multipurpose "package code")
+- main.go (for the entrypoint)
 
----
-### Actionable items
-- How do you add/integrate tests into all of this?. It's important. You need to figure it out!
-- Set sane values for config if you find no file? (aka running from container in cmdline mode?)
-- Explicitly rename things like "projectRepos" for "projectRepoUrls" when they're different types
-- Set up AWS user with proper permissions (terraform this part too)
-    - Cron set up
-- Set up a working Dockerfile
-- Is it possible to write a Prometheus Exporter?
-- Check for stray print messages
-- Is variable shadowing OK?
-- Check why some links don't get templated properly like this one (see the 404 in here): https://mdscanner.dcalvo.dev/kubernetes/sample-apiserver.html 
-- Stick to a coding standard pls (is it c or config? r or repo?)
-- Order the functions in the packages (put close together what happens close together)
-- Refine HTTP ERR (check the error and take it from there, it's more valuable to know that something is a timeout rather than a 404)
-- Can you have a status page? You can have an independent routine running that updates a status page
-- You are still missing tests!
+And get going. You can check/add more stuff later, I don't think you need more folders right now
 
-### Code TODOs
-- Redo the Dockerfile for the executable thing
-- Careful with what you export (https://blog.golang.org/organizing-go-code)
-- https://peter.bourgon.org/go-best-practices-2016/#repository-structure
-- https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
+cobra add scan
+- scan <single-repo>
+- scan --config=as #uh, how do you do the scan from config thing?
 
-- About Cobra: https://github.com/spf13/cobra
-    - I think you don't need cobra for now as you'll only run with one parameter, but maybe investigate more functionality later
-    - Like running the program with a parameter (--project) or to save results locally and don't upload them to S3 (--dont-upload)
-    - Viper remains to be explored later as well: https://github.com/spf13/viper
+### Copy & paste notes
+- pkg -> internal
+- cmd -> ???
+- main.go -> ???
 
-### Things to do
-- Scan projects that have not been scanned the longest first
-- Check how having using a more sophisticated logging method could improve the program
-- Set a timeout / handle timeouts on HTTP checks properly. Further info here: http://networkbit.ch/golang-http-client/#minimal
-- Create usage instructions
-- Don't forget to document which links get ignored somewhere
-- Find a way to implement header checks for markdown files. That might be tough...
-- Recheck go.mod and general install (create instructions)
-- There are no unit tests. You should create some!
-- Remove the excessive newlines on the html if you can, more info here: https://github.com/golang/go/issues/9969
-
-#### Terraform
-- Create the following:
-    - S3 bucket (not public)
-    - User to access the bucket
-    - A policy for the user granting access only to that bucket
-
-### md scanner ideas
-- Create a cloudwatch event that launches an instance, does something and then exits?
-
-- How do I stop and start Amazon EC2 instances at regular intervals using Lambda?
-    - https://aws.amazon.com/premiumsupport/knowledge-center/start-stop-lambda-cloudwatch/
-
-- How to connect to S3?
-    - https://docs.aws.amazon.com/AmazonS3/latest/dev/security-best-practices.html
-
-- Can you use Lambda pre signed URLs to upload files securely?
-    - https://medium.com/@lakshmanLD/upload-file-to-s3-using-lambda-the-pre-signed-url-way-158f074cda6c
-
-- How is Lambda local development done again? Can you launch a function that uploads a mock file to s3?
-
-#### Maybe
-- Just run things on an ec2 instance for now, worry about migrating to t2 micro later
-
-#### Possible feature ideas
-- Can you take the feature toggle approach as defined in the cloud ops book?
-    - Application could save something either to S3 or local filesystem
-    - "How to feature toggle golang"
-    - https://featureflags.io/go-feature-flags/
+### Usage
+- mdscanner single <repo>
+- mdscanner --from-config=
+- mdscanner scan-all --config=

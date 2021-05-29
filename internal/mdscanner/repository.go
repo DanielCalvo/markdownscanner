@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/DanielCalvo/markdownscanner/pkg/config"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"html/template"
 	"io/ioutil"
 	"log"
+	"markdownscanner/internal/config"
 	"net/http"
 	"net/url"
 	"os"
@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 type GithubProjectApiResponse []struct {
@@ -152,10 +153,21 @@ type RepositoriesYaml struct {
 	Projects     []string `yaml:"projects"`
 }
 
+func GetUrlPath (repoURL string) (string, error) {
+	u, err := url.ParseRequestURI(repoURL)
+	if err != nil {
+		return "", err
+	}
+	if ! strings.HasPrefix(repoURL, "http") {
+		return "", errors.New("URL must begin with http")
+	}
+	return string(u.Path), nil
+}
+
 func NewRepository(c *config.Config, repoURL string) (Repository, error) {
 	var r Repository
 
-	url, err := url.ParseRequestURI(repoURL)
+	urlPath, err := GetUrlPath(repoURL)
 	if err != nil {
 		return r, err
 	}
@@ -163,14 +175,14 @@ func NewRepository(c *config.Config, repoURL string) (Repository, error) {
 	//You can populate other fields in here as you progress with the project, such as Last Scanned
 	r = Repository{
 		URL:                repoURL,
-		Name:               url.Path,
-		FilesystemPath:     c.Filesystem.TmpFolder + url.Path,
+		Name:               urlPath,
+		FilesystemPath:     c.Filesystem.TmpFolder + urlPath,
 		LastScanned:        "",
 		LinksScanned:       0,
 		Links404:           0,
-		JSONReportPath:     url.Path + ".json",
-		HTMLReportPath:     url.Path + ".html",
-		MetadataReportPath: c.Filesystem.ScanMetadataFolder + "/" + GetRepoNameWithUnderscores(url.Path) + ".json",
+		JSONReportPath:     urlPath + ".json",
+		HTMLReportPath:     urlPath + ".html",
+		MetadataReportPath: c.Filesystem.ScanMetadataFolder + "/" + GetURLWithUnderscores(urlPath) + ".json",
 		MarkdownFiles:      []MarkdownFile{},
 		MarkdownLinks:      []MarkdownLink{},
 	}
@@ -208,9 +220,9 @@ func ValidateGitRepository(repository string) error {
 //go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
 //github.com/kubernetes/kubernetes takes about 1gb of ram to clone
 //This runs on an orangepi with 512mb of ram, so we're gonna have to stick with the command line git
-func CloneRepository(r Repository) error {
-	if !DoesExist(r.FilesystemPath) {
-		cmd := exec.Command("git", "clone", r.URL, r.FilesystemPath)
+func CloneRepository(repoUrl string, fileSystemPath string) error {
+	if !DoesExist(fileSystemPath) {
+		cmd := exec.Command("git", "clone", repoUrl, fileSystemPath)
 		err := cmd.Run()
 		if err != nil {
 			return err
@@ -340,8 +352,15 @@ func SaveStructToJson(s interface{}, jsonFilesystemPath string) error {
 	return nil
 }
 
-func GetRepoNameWithUnderscores(repoName string) string {
-	return strings.ReplaceAll(repoName, "/", "_")
+//Transforms "/kubernetes/kubectl" to "kubernetes_kubectl"
+func GetURLWithUnderscores(url string) string {
+	trimmedUrl := TrimFirstRune(url)
+	return strings.ReplaceAll(trimmedUrl, "/", "_")
+}
+
+func TrimFirstRune(s string) string {
+	_, i := utf8.DecodeRuneInString(s)
+	return s[i:]
 }
 
 func GetRepositoriesScanMetadata(c config.Config) ([]Repository, error) {
@@ -380,7 +399,8 @@ func GenerateAndUploadIndexHtml(c config.Config) error {
 		return err
 	}
 
-	indexTpl := template.Must(template.ParseFiles(c.Filesystem.ProjectFolder + "/assets/index.gohtml"))
+	//AAAAAAAAAAAAAAAAAAAAAAAAAAAAH THIS IS HORRIBLE WHY IS ASSETS HARDCORDED AAAAAAAAAAAAA (this message is humorous in nature, I am not in fact screaming)
+	indexTpl := template.Must(template.ParseFiles(c.Filesystem.ProjectFolder + "/templates/index.gohtml"))
 
 	var buf bytes.Buffer
 
@@ -435,9 +455,11 @@ func UploadJSONToS3(c config.Config, r Repository) error {
 	return nil
 }
 
+//Hey wait, you're both templating and uploading here, you should separate this!
 func UploadHTMLToS3(c config.Config, r Repository) error {
 	//Dear lord I should store this string somewhere
-	buf, err := TemplateHTMLReportToBuffer(c.Filesystem.ProjectFolder+string(os.PathSeparator)+"assets"+string(os.PathSeparator)+"results_table.gohtml", r)
+	//DEAR LORD THIS IS HORRIBLE (that hardcoded templated string is bad and I feel bad)
+	buf, err := TemplateHTMLReportToBuffer(c.Filesystem.ProjectFolder+string(os.PathSeparator)+"templates"+string(os.PathSeparator)+"results_table.gohtml", r)
 	if err != nil {
 		return err
 	}
@@ -520,7 +542,7 @@ func Count404MarkdownLinks(mdLinks []MarkdownLink) int {
 	var c int
 	for _, link := range mdLinks {
 		if link.Status == "404" {
-			c++
+			c++ //Look, a joke!
 		}
 	}
 	return c
@@ -543,7 +565,7 @@ func SortRepositoriesByUnscannedFirst(repos []Repository) []Repository {
 	return sortedRepos
 }
 
-//Make this more modular later, 404 isn't very... parametrized
+//Make this more modular later, 404 isn't very... parametrized. Rename it to something like "SortLinksByHTTPStatus"
 func SortLinksBy404(mdLinks []MarkdownLink) []MarkdownLink {
 	var links404 []MarkdownLink
 	var otherLinks []MarkdownLink

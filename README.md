@@ -7,5 +7,5 @@ While signing up to contribute to k8s, I found a broken link on the sign up proc
 I then wondered: How many other markdown links are broken in open source projects? As it turns out, a lot of them.  
 This tool will hopefully help me find and fix these links.
 
-#### Docker shenanigans
-- Pending
+### There are bugs!
+- Some links show as broken while they aren't. I need to get around fixing that...

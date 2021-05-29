@@ -13,6 +13,7 @@ import (
 
 //Should I put the file config inside another struct as it was done in Prometheus?
 //Don't forget the rename TODO as described on config.yaml
+//This is awful to read!
 type Config struct {
 	Filesystem struct {
 		ProjectFolder      string `yaml:"projectFolder"` //I don't like this -- get it from the $CURRENT_DIR if you can
@@ -26,7 +27,7 @@ type Config struct {
 	} `yaml:"s3"`
 	GithubProjects []string `yaml:"GithubProjects"`
 	Repositories   []string `yaml:"Repositories"`
-	S3session      *session.Session
+	S3session      *session.Session //This does not need to be here
 }
 
 // Load parses the YAML input s into a Config.

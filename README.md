@@ -6,6 +6,3 @@ Please note that this project is under (sporadic) development and it's not finis
 While signing up to contribute to k8s, I found a broken link on the sign up process. [This was then my my first contribution.](https://github.com/kubernetes/community/pull/4304)  
 I then wondered: How many other markdown links are broken in open source projects? As it turns out, a lot of them.  
 This tool will hopefully help me find and fix these links.
-
-#### Docker shenanigans
-- Pending

@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+//TODO here: Exit gracefully with a help message, as for now the command requires at least scan or scan-all as arguments!
+
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands

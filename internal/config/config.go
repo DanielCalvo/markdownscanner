@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 )
@@ -20,46 +21,58 @@ type Config struct {
 		TmpFolder          string `yaml:"tmpFolder"`
 		ScanMetadataFolder string `yaml:"scanMetadataFolder"`
 	} `yaml:"filesystem"`
+
 	S3 struct {
 		Region       string `yaml:"region"`
 		BucketName   string `yaml:"bucketName"`
 		BuckerFolder string `yaml:"buckerFolder"`
 	} `yaml:"s3"`
-	GithubProjects []string `yaml:"GithubProjects"`
-	Repositories   []string `yaml:"Repositories"`
+	GithubProjects []string         `yaml:"GithubProjects"`
+	Repositories   []string         `yaml:"Repositories"`
 	S3session      *session.Session //This does not need to be here
+
+}
+
+//This was put together by copying and pasting from other places. Some of these are by reference and others are not. Adopt a standard!
+//Also can you merge "LoadFile" and "Initialize?" Or at organize them better, they're doing very similar things
+func New(configFile string) (Config, error) {
+	cfg, err := LoadFile(configFile)
+
+	if err != nil {
+		return cfg, err
+	}
+
+	log.Println("Initializing config file")
+	err = Initialize(&cfg)
+	if err != nil {
+		return cfg, err
+	}
+
+	return cfg, nil
 }
 
 // Load parses the YAML input s into a Config.
-func Load(s string) (*Config, error) {
-	cfg := &Config{}
-	// If the entire config body is empty the UnmarshalYAML method is
-	// never called. We thus have to set the DefaultConfig at the entry
-	// point as well.
-
-	//Note from Dani: Is setting a default config useful here?
-	//*cfg = DefaultConfig
-
-	err := yaml.UnmarshalStrict([]byte(s), cfg)
+func Load(s string) (Config, error) {
+	cfg := Config{}
+	err := yaml.UnmarshalStrict([]byte(s), &cfg)
 	if err != nil {
-		return nil, err
+		return cfg, err
 	}
 	return cfg, nil
 }
 
 // LoadFile parses the given YAML file into a Config.
-func LoadFile(filename string) (*Config, error) {
-	if filename == "" {
-		return nil, fmt.Errorf("config.file flag required but not passed")
-	}
+func LoadFile(filename string) (Config, error) {
+
+	var cfg = Config{}
 
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return cfg, err
 	}
-	cfg, err := Load(string(content))
+	cfg, err = Load(string(content))
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing YAML file %s", filename)
+		return cfg, errors.Wrapf(err, "parsing YAML file %s", filename)
 	}
 	return cfg, nil
 }
@@ -79,7 +92,6 @@ func ValidateS3Bucket(c *Config) error {
 
 //somehow check that you can write to the tmp folder?
 func ValidateDir(s string) error {
-
 	//Remove the contents of the temporary directory on startup (but not the directory itself)
 	dir, err := ioutil.ReadDir(s)
 	for _, d := range dir {
@@ -107,11 +119,22 @@ func ValidateDir(s string) error {
 
 //This function may be doing to many things -- maybe do the S3 check elsewhere
 func Initialize(c *Config) error {
-	err := ValidateDir(c.Filesystem.TmpFolder)
+	dir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
+	c.Filesystem.ProjectFolder = dir
+	c.Filesystem.TmpFolder = dir + string(os.PathSeparator) + "tmp"
+	c.Filesystem.ScanMetadataFolder = dir + string(os.PathSeparator) + "metadata"
+
+	//tmp folder
+	err = ValidateDir(c.Filesystem.ProjectFolder)
+	if err != nil {
+		return err
+	}
+
+	//metadata folder
 	err = ValidateDir(c.Filesystem.ScanMetadataFolder)
 	if err != nil {
 		return err

@@ -1,15 +1,10 @@
-#Rename this to Folders, followed  by "tmp" and "project"
-filesystem:
-  projectFolder: /home/daniel/Projects/markdownscanner #These are awful to work with :(, reokace this with some os.Getwd or something
-  scanMetadataFolder: /home/daniel/tmp/markdownscanner/metadata
-  tmpFolder: /home/daniel/tmp/markdownscanner/tmp
 s3:
   region: eu-west-1
   bucketName: mdscanner-bucket
-#GithubProjects:
-#  - kubernetes
-#  - trivago
-#  - etcd-io
-#  - hashicorp
-Repositories:
-  - https://github.com/kubernetes/kubectl
+GithubProjects:
+  - kubernetes
+  - trivago
+  - etcd-io
+  - hashicorp
+#Repositories:
+#  - https://github.com/kubernetes/kubectl

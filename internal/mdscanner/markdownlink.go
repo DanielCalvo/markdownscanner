@@ -92,7 +92,12 @@ func (m *MarkdownLink) CheckHTTP() {
 func (m *MarkdownLink) CheckFile() {
 	m.Type = "FILE"
 
-	mDestination := filepath.Dir(m.LocalFilePath) + string(os.PathSeparator) + m.Destination
+	dir := filepath.Dir(m.LocalFilePath)
+	err := os.Chdir(dir)
+	if err != nil {
+		m.Status = "ERR"
+		return
+	}
 
 	//Still can't check things like: /app_management/secrets_and_configmaps.md#secrets-from-files (yet!)
 	if strings.HasPrefix(m.Destination, "#") || strings.Contains(m.Destination, "#") {
@@ -100,15 +105,7 @@ func (m *MarkdownLink) CheckFile() {
 		return
 	}
 
-	_, err := os.Stat(mDestination)
-	if os.IsNotExist(err) {
-		m.Status = "404"
-	} else {
-		m.Status = "200"
-	}
-
-	//Is this happening twice for no reason?
-	if _, err := os.Stat(mDestination); os.IsNotExist(err) {
+	if _, err := os.Stat(m.Destination); os.IsNotExist(err) {
 		m.Status = "404"
 	} else {
 		m.Status = "200"

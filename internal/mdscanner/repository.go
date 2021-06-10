@@ -153,12 +153,12 @@ type RepositoriesYaml struct {
 	Projects     []string `yaml:"projects"`
 }
 
-func GetUrlPath (repoURL string) (string, error) {
+func GetUrlPath(repoURL string) (string, error) {
 	u, err := url.ParseRequestURI(repoURL)
 	if err != nil {
 		return "", err
 	}
-	if ! strings.HasPrefix(repoURL, "http") {
+	if !strings.HasPrefix(repoURL, "http") {
 		return "", errors.New("URL must begin with http")
 	}
 	return string(u.Path), nil

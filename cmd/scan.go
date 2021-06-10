@@ -61,12 +61,6 @@ func RunScan(cmd *cobra.Command, args []string) {
 		log.Println("Getting Markdown links from files")
 		mdscanner.GetMarkdownLinksFromFiles(&repo)
 
-		log.Println("Deleting repository", repo.Name)
-		err = mdscanner.DeleteRepository(repo)
-		if err != nil {
-			log.Println("Unable to delete repository:", err)
-		}
-
 		log.Println("Checking Markdown links")
 		repo.MarkdownLinks = mdscanner.CheckMarkdownLinksWithSleep(repo.MarkdownLinks, time.Second)
 		repo.MarkdownLinks = mdscanner.SortLinksBy404(repo.MarkdownLinks)
@@ -87,6 +81,11 @@ func RunScan(cmd *cobra.Command, args []string) {
 				log.Fatalf(err.Error())
 			}
 			fmt.Println(string(repoJSON))
+		}
+		log.Println("Deleting repository", repo.Name)
+		err = mdscanner.DeleteRepository(repo)
+		if err != nil {
+			log.Println("Unable to delete repository:", err)
 		}
 	}
 }

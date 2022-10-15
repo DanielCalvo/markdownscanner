@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"log"
-	"markdownscanner/internal/config"
 	"markdownscanner/internal/mdscanner"
 	"os"
 	"time"
@@ -27,13 +26,16 @@ func init() {
 		log.Panicln("Unable to get working dir:", err)
 	}
 
-	scanAllCmd.Flags().String("config", pwd+string(os.PathSeparator)+"mdscanner.yaml", "Path to mdscanner config file")
+	scanAllCmd.Flags().String("config", pwd+string(os.PathSeparator)+"config.yaml", "Path to mdscanner config file")
 }
 
+// Unused parameters args -- but I'm not sure if we can remove this...
 func RunScanAll(cmd *cobra.Command, args []string) {
 
 	//This needs redoing/refining
-	conf, err := config.New(cmd.Flag("config").Value.String())
+	conf, err := mdscanner.New(cmd.Flag("config").Value.String())
+	//conf, err := mdscanner.New("/home/daniel/Projects/markdownscanner/config.yaml") //More hardcoding? big oof
+
 	if err != nil {
 		log.Panicln("Could not load initialize config:", err)
 	}
@@ -59,8 +61,9 @@ func RunScanAll(cmd *cobra.Command, args []string) {
 		log.Println("Getting Markdown links from files")
 		mdscanner.GetMarkdownLinksFromFiles(&repo)
 
-		log.Println("Deleting cloned repository files for", repo.Name)
-		err = mdscanner.DeleteRepository(repo)
+		//But why would you?
+		//log.Println("Deleting cloned repository files for", repo.Name)
+		//err = mdscanner.DeleteRepository(repo)
 		if err != nil {
 			log.Println("Unable to delete repository:", err)
 			continue

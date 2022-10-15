@@ -1,0 +1,10 @@
+s3:
+  region: eu-west-1
+  bucketName: mdscanner-bucket
+Filesystem:
+  RepositoriesFolder: /home/daniel/Projects/markdownscanner/repos
+  ScanMetadataFolder: /home/daniel/Projects/markdownscanner/metadata
+GithubProjects:
+#  - kubernetes
+  - etcd-io
+#  - hashicorp

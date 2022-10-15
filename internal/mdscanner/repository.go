@@ -9,7 +9,6 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
-	"markdownscanner/internal/config"
 	"net/http"
 	"net/url"
 	"os"
@@ -164,7 +163,7 @@ func GetUrlPath(repoURL string) (string, error) {
 	return string(u.Path), nil
 }
 
-func NewRepository(c *config.Config, repoURL string) (Repository, error) {
+func NewRepository(c *Config, repoURL string) (Repository, error) {
 	var r Repository
 
 	urlPath, err := GetUrlPath(repoURL)
@@ -176,7 +175,7 @@ func NewRepository(c *config.Config, repoURL string) (Repository, error) {
 	r = Repository{
 		URL:                repoURL,
 		Name:               urlPath,
-		FilesystemPath:     c.Filesystem.TmpFolder + urlPath,
+		FilesystemPath:     c.Filesystem.RepositoriesFolder + urlPath,
 		LastScanned:        "",
 		LinksScanned:       0,
 		Links404:           0,
@@ -190,7 +189,8 @@ func NewRepository(c *config.Config, repoURL string) (Repository, error) {
 	return r, nil
 }
 
-func NewRepositories(c *config.Config, repoUrls []string) []Repository {
+// No verb before function?
+func NewRepositories(c *Config, repoUrls []string) []Repository {
 	var repositories []Repository
 
 	for _, repoUrl := range repoUrls {
@@ -205,7 +205,8 @@ func NewRepositories(c *config.Config, repoUrls []string) []Repository {
 	return repositories
 }
 
-//Hmmm maybe this can be useful at some point
+// Hmmm maybe this can be useful at some point
+// It is unused now however!
 func ValidateGitRepository(repository string) error {
 	_, err := url.ParseRequestURI(repository)
 	if err != nil {
@@ -217,10 +218,18 @@ func ValidateGitRepository(repository string) error {
 	return nil
 }
 
-//go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
-//github.com/kubernetes/kubernetes takes about 1gb of ram to clone
-//This runs on an orangepi with 512mb of ram, so we're gonna have to stick with the command line git
+// go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
+// github.com/kubernetes/kubernetes takes about 1gb of ram to clone
+// This runs on an orangepi with 512mb of ram, so we're gonna have to stick with the command line git
 func CloneRepository(repoUrl string, fileSystemPath string) error {
+	if DoesExist(fileSystemPath) {
+		os.Chdir(fileSystemPath)
+		cmd := exec.Command("git", "pull")
+		err := cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
 	if !DoesExist(fileSystemPath) {
 		cmd := exec.Command("git", "clone", repoUrl, fileSystemPath)
 		err := cmd.Run()
@@ -231,6 +240,7 @@ func CloneRepository(repoUrl string, fileSystemPath string) error {
 	return nil
 }
 
+// But why would you?
 func DeleteRepository(r Repository) error {
 	err := os.RemoveAll(r.FilesystemPath)
 	if err != nil {
@@ -239,7 +249,7 @@ func DeleteRepository(r Repository) error {
 	return nil
 }
 
-//Scan metadata is just a subset of the Repository struct, but without the files and links slices
+// Scan metadata is just a subset of the Repository struct, but without the files and links slices
 func SaveScanMetadata(r Repository) error {
 	r.MarkdownFiles = nil
 	r.MarkdownLinks = nil
@@ -280,12 +290,12 @@ func GetMarkdownLinksFromFiles(r *Repository) {
 	}
 }
 
-//takes a markdown file
-//returns a slice of markdownlink
+// takes a markdown file
+// returns a slice of markdownlink
 func GetMarkdownLinksFromFile(mdFile MarkdownFile) ([]MarkdownLink, error) {
 	var mdLinks []MarkdownLink
 
-	fileContents, err := ioutil.ReadFile(mdFile.FilePath)
+	fileContents, err := ioutil.ReadFile(mdFile.FilePath) //Deprecated!
 	if err != nil {
 		return mdLinks, err
 	}
@@ -318,7 +328,7 @@ func GetMarkdownLinksFromFile(mdFile MarkdownFile) ([]MarkdownLink, error) {
 	return mdLinks, nil
 }
 
-//You couldn't figure out why an in-place operation in mdLink.CheckLink did not get the value out of this function
+// You couldn't figure out why an in-place operation in mdLink.CheckLink did not get the value out of this function
 func CheckMarkdownLinksWithSleep(mdLinks []MarkdownLink, sleepTime time.Duration) []MarkdownLink {
 	var scannedLinks []MarkdownLink
 
@@ -345,14 +355,14 @@ func SaveStructToJson(s interface{}, jsonFilesystemPath string) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(jsonFilesystemPath, resultJson, 0644)
+	err = ioutil.WriteFile(jsonFilesystemPath, resultJson, 0644) //Deprecated!
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-//Transforms "/kubernetes/kubectl" to "kubernetes_kubectl"
+// Transforms "/kubernetes/kubectl" to "kubernetes_kubectl"
 func GetURLWithUnderscores(url string) string {
 	trimmedUrl := TrimFirstRune(url)
 	return strings.ReplaceAll(trimmedUrl, "/", "_")
@@ -363,7 +373,7 @@ func TrimFirstRune(s string) string {
 	return s[i:]
 }
 
-func GetRepositoriesScanMetadata(c config.Config) ([]Repository, error) {
+func GetRepositoriesScanMetadata(c Config) ([]Repository, error) {
 	var repositories []Repository
 
 	err := filepath.Walk(c.Filesystem.ScanMetadataFolder, func(path string, file os.FileInfo, err error) error {
@@ -377,7 +387,7 @@ func GetRepositoriesScanMetadata(c config.Config) ([]Repository, error) {
 			}
 			defer jsonFile.Close()
 			//Ignoring error? Questionable :o
-			GitRepositoryJson, _ := ioutil.ReadAll(jsonFile)
+			GitRepositoryJson, _ := ioutil.ReadAll(jsonFile) //Deprecated!
 			err = json.Unmarshal(GitRepositoryJson, &repository)
 			if err != nil {
 				return err
@@ -393,7 +403,7 @@ func GetRepositoriesScanMetadata(c config.Config) ([]Repository, error) {
 	return repositories, nil
 }
 
-func GenerateAndUploadIndexHtml(c config.Config) error {
+func GenerateAndUploadIndexHtml(c Config) error {
 	repositories, err := GetRepositoriesScanMetadata(c)
 	if err != nil {
 		return err
@@ -422,7 +432,7 @@ func GenerateAndUploadIndexHtml(c config.Config) error {
 	return nil
 }
 
-func UploadResultsToS3(c config.Config, r Repository) error {
+func UploadResultsToS3(c Config, r Repository) error {
 	err := UploadJSONToS3(c, r)
 	if err != nil {
 		return err
@@ -435,7 +445,7 @@ func UploadResultsToS3(c config.Config, r Repository) error {
 	return nil
 }
 
-func UploadJSONToS3(c config.Config, r Repository) error {
+func UploadJSONToS3(c Config, r Repository) error {
 	mdLinksJson, err := json.MarshalIndent(r.MarkdownLinks, "", "  ")
 	if err != nil {
 		return err
@@ -455,8 +465,8 @@ func UploadJSONToS3(c config.Config, r Repository) error {
 	return nil
 }
 
-//Hey wait, you're both templating and uploading here, you should separate this!
-func UploadHTMLToS3(c config.Config, r Repository) error {
+// Hey wait, you're both templating and uploading here, you should separate this!
+func UploadHTMLToS3(c Config, r Repository) error {
 	//Dear lord I should store this string somewhere
 	//DEAR LORD THIS IS HORRIBLE (that hardcoded templated string is bad and I feel bad)
 	buf, err := TemplateHTMLReportToBuffer(c.Filesystem.ProjectFolder+string(os.PathSeparator)+"templates"+string(os.PathSeparator)+"results_table.gohtml", r)
@@ -520,7 +530,7 @@ func GetRepoUrlsFromProject(project string) ([]string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body) // Deprecated!
 	if err != nil {
 		log.Println("Error reading body. ", err)
 	}
@@ -565,7 +575,7 @@ func SortRepositoriesByUnscannedFirst(repos []Repository) []Repository {
 	return sortedRepos
 }
 
-//Make this more modular later, 404 isn't very... parametrized. Rename it to something like "SortLinksByHTTPStatus"
+// Make this more modular later, 404 isn't very... parametrized. Rename it to something like "SortLinksByHTTPStatus"
 func SortLinksBy404(mdLinks []MarkdownLink) []MarkdownLink {
 	var links404 []MarkdownLink
 	var otherLinks []MarkdownLink

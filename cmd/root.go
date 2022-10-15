@@ -31,10 +31,13 @@ to quickly create a Cobra application.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	fmt.Println("root command! 1")
 	cobra.CheckErr(rootCmd.Execute())
+
 }
 
 func init() {
+	fmt.Println("root command! 2")
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
@@ -50,6 +53,7 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	fmt.Println("root command! 3")
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)

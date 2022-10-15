@@ -39,9 +39,8 @@ func (m *MarkdownLink) IsFile() bool {
 	return false
 }
 
-//It's starting to look like you could use a map here
+// It's starting to look like you could use a map here
 func (m *MarkdownLink) IsIgnored() bool {
-
 	//If changelog file
 	if strings.Contains(strings.ToLower(m.LocalFilePath), "changelog") {
 		return true

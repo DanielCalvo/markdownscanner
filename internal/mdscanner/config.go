@@ -1,4 +1,4 @@
-package config
+package mdscanner
 
 import (
 	"fmt"
@@ -9,18 +9,17 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 )
 
-//Should I put the file config inside another struct as it was done in Prometheus?
-//Don't forget the rename TODO as described on config.yaml
-//This is awful to read!
+// Should I put the file config inside another struct as it was done in Prometheus?
+// Don't forget the rename TODO as described on config.yaml
+// This is awful to read!
 type Config struct {
 	Filesystem struct {
-		ProjectFolder      string `yaml:"projectFolder"` //I don't like this -- get it from the $CURRENT_DIR if you can
-		TmpFolder          string `yaml:"tmpFolder"`
-		ScanMetadataFolder string `yaml:"scanMetadataFolder"`
-	} `yaml:"filesystem"`
+		ProjectFolder      string `yaml:"projectFolder"`      //I don't like this -- get it from the $CURRENT_DIR if you can
+		RepositoriesFolder string `yaml:"RepositoriesFolder"` //TmpFolder is too generic, be more specific! Also,
+		ScanMetadataFolder string `yaml:"ScanMetadataFolder"` //What does this mean?
+	} `yaml:"Filesystem"`
 
 	S3 struct {
 		Region       string `yaml:"region"`
@@ -30,11 +29,11 @@ type Config struct {
 	GithubProjects []string         `yaml:"GithubProjects"`
 	Repositories   []string         `yaml:"Repositories"`
 	S3session      *session.Session //This does not need to be here
-
 }
 
-//This was put together by copying and pasting from other places. Some of these are by reference and others are not. Adopt a standard!
-//Also can you merge "LoadFile" and "Initialize?" Or at organize them better, they're doing very similar things
+// This was put together by copying and pasting from other places. Some of these are by reference and others are not. Adopt a standard!
+// Also can you merge "LoadFile" and "Initialize?" Or at organize them better, they're doing very similar things
+// New what? New config? New command?
 func New(configFile string) (Config, error) {
 	cfg, err := LoadFile(configFile)
 
@@ -66,7 +65,7 @@ func LoadFile(filename string) (Config, error) {
 
 	var cfg = Config{}
 
-	content, err := ioutil.ReadFile(filename)
+	content, err := ioutil.ReadFile(filename) //uh-oh, deprecated?
 	if err != nil {
 		return cfg, err
 	}
@@ -77,12 +76,13 @@ func LoadFile(filename string) (Config, error) {
 	return cfg, nil
 }
 
-//Hmmm
+// Hmmm, what was this for again?
 func ValidateGitRepos(s string) error {
 	return nil
 }
 
-//check that the s3 bucket exists and you can upload files to it
+// check that the s3 bucket exists and you can upload files to it -- maybe this is what you want to have on the root command
+// If so, does it need to be a function anyway? Might as well just put it in the root thing
 func ValidateS3Bucket(c *Config) error {
 	//import something from the S3 package for this, do later
 	fmt.Println(c.S3.BucketName)
@@ -90,13 +90,15 @@ func ValidateS3Bucket(c *Config) error {
 	return nil
 }
 
-//somehow check that you can write to the tmp folder?
+// somehow check that you can write to the tmp folder?
 func ValidateDir(s string) error {
 	//Remove the contents of the temporary directory on startup (but not the directory itself)
-	dir, err := ioutil.ReadDir(s)
-	for _, d := range dir {
-		_ = os.RemoveAll(path.Join([]string{"tmp", d.Name()}...))
-	}
+	//dir, err := ioutil.ReadDir(s) //uh-oh, deprecated? replace this with... something!
+
+	//We want to keek the repos in between runs!
+	//for _, d := range dir {
+	//	_ = os.RemoveAll(path.Join([]string{"tmp", d.Name()}...))
+	//}
 
 	f, err := os.Stat(s)
 
@@ -117,16 +119,16 @@ func ValidateDir(s string) error {
 	return nil
 }
 
-//This function may be doing to many things -- maybe do the S3 check elsewhere
+// This function may be doing to many things -- maybe do the S3 check elsewhere
 func Initialize(c *Config) error {
-	dir, err := os.Getwd()
+	dir, err := os.Getwd() //Probably unecessary, right?
 	if err != nil {
 		return err
 	}
 
 	c.Filesystem.ProjectFolder = dir
-	c.Filesystem.TmpFolder = dir + string(os.PathSeparator) + "tmp"
-	c.Filesystem.ScanMetadataFolder = dir + string(os.PathSeparator) + "metadata"
+	//c.Filesystem.RepositoriesFolder = dir + string(os.PathSeparator) + "tmp"
+	//c.Filesystem.ScanMetadataFolder = dir + string(os.PathSeparator) + "metadata"
 
 	//tmp folder
 	err = ValidateDir(c.Filesystem.ProjectFolder)

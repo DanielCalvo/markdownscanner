@@ -5,6 +5,6 @@ Filesystem:
   RepositoriesFolder: /home/daniel/Projects/markdownscanner/repos
   ScanMetadataFolder: /home/daniel/Projects/markdownscanner/metadata
 GithubProjects:
-#  - kubernetes
+  - kubernetes
   - etcd-io
-#  - hashicorp
+  - hashicorp

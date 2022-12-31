@@ -1,6 +1,7 @@
 #!/bin/bash
-#Github actions? Gitlab? Tekton? Naaaaaaaaaah
+#Just throwing it over the fence yolo
 
-env GOOS=linux GOARCH=arm go build
-rsync -av --no-perms --chown=root:root . daniel@192.168.31.131:/disk/markdownscanner #Has to be root for now, vfat is terrible
+env GOOS=linux go build
+ssh daniel@192.168.1.112 'mkdir -p /home/daniel/Projects/markdownscanner' #locally installed rsync is old and doesn't have `--mkpath` available
+rsync -av --no-perms --chown=daniel:daniel . daniel@192.168.1.112:/home/daniel/Projects/markdownscanner
 rm markdownscanner

@@ -1,9 +1,9 @@
 variable "domain-name" {
-  type = string
+  type    = string
   default = "mdscanner.dcalvo.dev"
 }
 
 variable "bucket-name" {
-  type = string
+  type    = string
   default = "mdscanner-bucket"
 }

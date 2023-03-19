@@ -205,19 +205,6 @@ func NewRepositories(c *Config, repoUrls []string) []Repository {
 	return repositories
 }
 
-// Hmmm maybe this can be useful at some point
-// It is unused now however!
-func ValidateGitRepository(repository string) error {
-	_, err := url.ParseRequestURI(repository)
-	if err != nil {
-		return err
-	}
-	if !strings.HasPrefix(repository, "http") {
-		return errors.New("Repository URL does not start with http(s)")
-	}
-	return nil
-}
-
 // go-git can't clone large repositories without using very large amounts of memory: https://github.com/src-d/go-git/issues/761
 // github.com/kubernetes/kubernetes takes about 1gb of ram to clone
 // This runs on an orangepi with 512mb of ram, so we're gonna have to stick with the command line git
@@ -276,7 +263,7 @@ func GetMarkdownFiles(r *Repository) {
 		return err
 	})
 	if err != nil {
-		log.Printf("Error walking the path %q: %v\n", err)
+		log.Printf("Error walking the path: %v\n", err)
 	}
 }
 
@@ -290,12 +277,10 @@ func GetMarkdownLinksFromFiles(r *Repository) {
 	}
 }
 
-// takes a markdown file
-// returns a slice of markdownlink
 func GetMarkdownLinksFromFile(mdFile MarkdownFile) ([]MarkdownLink, error) {
 	var mdLinks []MarkdownLink
 
-	fileContents, err := ioutil.ReadFile(mdFile.FilePath) //Deprecated!
+	fileContents, err := os.ReadFile(mdFile.FilePath)
 	if err != nil {
 		return mdLinks, err
 	}
@@ -409,8 +394,7 @@ func GenerateAndUploadIndexHtml(c Config) error {
 		return err
 	}
 
-	//AAAAAAAAAAAAAAAAAAAAAAAAAAAAH THIS IS HORRIBLE WHY IS ASSETS HARDCORDED AAAAAAAAAAAAA (this message is humorous in nature, I am not in fact screaming)
-	indexTpl := template.Must(template.ParseFiles(c.Filesystem.ProjectFolder + "/templates/index.gohtml"))
+	indexTpl := template.Must(template.ParseFiles(c.Filesystem.ProjectFolder + string(os.PathSeparator) + "templates" + string(os.PathSeparator) + "index.gohtml"))
 
 	var buf bytes.Buffer
 

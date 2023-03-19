@@ -76,11 +76,6 @@ func LoadFile(filename string) (Config, error) {
 	return cfg, nil
 }
 
-// Hmmm, what was this for again?
-func ValidateGitRepos(s string) error {
-	return nil
-}
-
 // check that the s3 bucket exists and you can upload files to it -- maybe this is what you want to have on the root command
 // If so, does it need to be a function anyway? Might as well just put it in the root thing
 func ValidateS3Bucket(c *Config) error {

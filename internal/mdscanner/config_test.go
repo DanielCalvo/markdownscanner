@@ -1,3 +1,0 @@
-package mdscanner
-
-//Crickets...

@@ -10,13 +10,23 @@ import (
 	"strings"
 )
 
+/*
+MarkdownLink represents a markdown hyperlink inside a markdown file.
+Filename: The name of the file that contains this markdown link. This is (usually? oof) populated with a call to os.FileInfo.Name()
+LocalFilePath: Full filesystem path for the file that contains this markdown link
+HTTPFilePath: An HTTPS path on github for the file that contains this markdownlink
+Name: The name of the markdownlink, the first field in here: [this is the name](this is the address)
+Destinatiopn: The name of the markdownlink, the first field in here: [this is the name](this is the address)
+*/
+
+// Markdown link should reference the Markdownfile it comes from more cleanly, its hard to keep track
 type MarkdownLink struct {
 	FileName      string
 	LocalFilePath string
 	HTTPFilePath  string
 	Name          string
 	Destination   string
-	Type          string
+	Type          string //Type should only be one of a few possilble types, is something like a rust enum possible here? Looks like it: https://www.sohamkamani.com/golang/enums/
 	Status        string
 }
 

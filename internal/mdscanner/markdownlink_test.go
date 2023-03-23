@@ -111,7 +111,7 @@ func TestMarkdownlinkTestLinkType(t *testing.T) {
 			if !mdLink.IsFile() && tt.desiredType == "file" {
 				t.Errorf("Mismatching isFile(), got isFile() == true on: %v", tt.destination)
 			}
-			if !mdLink.IsIgnored() && tt.desiredType == "ignored" {
+			if !mdLink.IsIgnored() && tt.desiredType == "IGNORED" {
 				t.Errorf("Mismatching isIgnored(), got isIgnored() == true on: %v", tt.destination)
 			}
 		})
@@ -125,15 +125,28 @@ var markdown string = `Links to a file:
 
 //How do I test checkFile and checkHTTP?
 
-func TestCheckHTTP(t *testing.T) {
-	m := MarkdownLink{
-		FileName:      "",
-		LocalFilePath: "",
-		HTTPFilePath:  "",
-		Name:          "",
-		Destination:   "testdata/file.md",
-		Type:          "",
-		Status:        "",
-	}
+//func TestCheckHTTP(t *testing.T) {
+//	m := MarkdownLink{
+//		FileName:      "",
+//		LocalFilePath: "",
+//		HTTPFilePath:  "",
+//		Name:          "",
+//		Destination:   "testdata/file.md",
+//		Type:          "",
+//		Status:        "",
+//	}
+//
+//}
 
+func TestCheckHTTP(t *testing.T) {
+
+}
+
+func TestSetIgnored(t *testing.T) {
+	m := MarkdownLink{}
+	m.SetIgnored()
+	if m.Type != "IGNORED" && m.Status != "IGNORED" {
+		t.Errorf("IsIgnored() is not functioning, wanted m.Type and m.Status to be IGNORED, got: %v", m)
+
+	}
 }

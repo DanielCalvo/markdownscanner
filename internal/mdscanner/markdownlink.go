@@ -15,18 +15,18 @@ MarkdownLink represents a markdown hyperlink inside a markdown file.
 Filename: The name of the file that contains this markdown link. This is (usually? oof) populated with a call to os.FileInfo.Name()
 LocalFilePath: Full filesystem path for the file that contains this markdown link
 HTTPFilePath: An HTTPS path on github for the file that contains this markdownlink
-Name: The name of the markdownlink, the first field in here: [this is the name](this is the address)
-Destinatiopn: The name of the markdownlink, the first field in here: [this is the name](this is the address)
+Name: The name of the markdownlink, the first field in here: [this is the name](this is the destination)
+Destination: The destination of the markdownlink, the second field in here: [this is the name](this is the destination)
+Type: The type of this link. Can be file, http, ignored or unknown (should be an iota maybe)
+Status: HTTP response status of this link. For file links, its either 200 or 404
 */
-
-// Markdown link should reference the Markdownfile it comes from more cleanly, its hard to keep track
 type MarkdownLink struct {
 	FileName      string
 	LocalFilePath string
 	HTTPFilePath  string
 	Name          string
 	Destination   string
-	Type          string //Type should only be one of a few possilble types, is something like a rust enum possible here? Looks like it: https://www.sohamkamani.com/golang/enums/
+	Type          string
 	Status        string
 }
 
